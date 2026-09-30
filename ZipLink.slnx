@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/ZipLink.Agentic/ZipLink.Agentic.csproj" />
     <Project Path="src/ZipLink.Api/ZipLink.Api.csproj" />
     <Project Path="src/ZipLink.Core/ZipLink.Core.csproj" />
     <Project Path="src/ZipLink.Infrastructure/ZipLink.Infrastructure.csproj" />
