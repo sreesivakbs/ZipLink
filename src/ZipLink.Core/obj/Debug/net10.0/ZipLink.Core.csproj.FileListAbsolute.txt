@@ -1,0 +1,11 @@
+C:\Projects\ZipLink\src\ZipLink.Core\bin\Debug\net10.0\ZipLink.Core.deps.json
+C:\Projects\ZipLink\src\ZipLink.Core\bin\Debug\net10.0\ZipLink.Core.dll
+C:\Projects\ZipLink\src\ZipLink.Core\bin\Debug\net10.0\ZipLink.Core.pdb
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\ZipLink.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\ZipLink.Core.AssemblyInfoInputs.cache
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\ZipLink.Core.AssemblyInfo.cs
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\ZipLink.Core.csproj.CoreCompileInputs.cache
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\ZipLink.Core.dll
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\refint\ZipLink.Core.dll
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\ZipLink.Core.pdb
+C:\Projects\ZipLink\src\ZipLink.Core\obj\Debug\net10.0\ref\ZipLink.Core.dll

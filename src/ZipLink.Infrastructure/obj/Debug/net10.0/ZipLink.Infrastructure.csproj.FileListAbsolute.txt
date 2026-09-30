@@ -1,0 +1,15 @@
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\bin\Debug\net10.0\ZipLink.Infrastructure.deps.json
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\bin\Debug\net10.0\ZipLink.Infrastructure.dll
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\bin\Debug\net10.0\ZipLink.Infrastructure.pdb
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\bin\Debug\net10.0\ZipLink.Core.dll
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\bin\Debug\net10.0\ZipLink.Core.pdb
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink.Infrastructure.csproj.AssemblyReference.cache
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink.Infrastructure.AssemblyInfoInputs.cache
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink.Infrastructure.AssemblyInfo.cs
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink..FDC66D57.Up2Date
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink.Infrastructure.dll
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\refint\ZipLink.Infrastructure.dll
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ZipLink.Infrastructure.pdb
+C:\Projects\ZipLink\src\ZipLink.Infrastructure\obj\Debug\net10.0\ref\ZipLink.Infrastructure.dll
