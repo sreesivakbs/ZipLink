@@ -45,10 +45,13 @@ Built so far:
 - Orchestration engine: stage DAG with entry/exit gates, parallel execution with
   synchronization, approval checkpoints, bounded retries, rollback, safe-stop,
   input-hash re-planning, append-only audit log, reliability metrics.
-- **One real agent — `design`** (`claude-opus-5`), schema-constrained, behind its
-  existing approval gate. Falls back to the stub when `ANTHROPIC_API_KEY` is unset, so
-  the pipeline still runs offline. `implement` and `docs` remain stubs.
-- 129 tests, all offline — the agent is tested through a fake `ILanguageModel`.
+- **Two real agents — `design` and `implement`** (`claude-opus-5`), schema-constrained,
+  behind their existing approval gates. Both fall back to stubs when `ANTHROPIC_API_KEY`
+  is unset, so the pipeline still runs offline. `docs` remains a stub.
+- **`implement` writes code** into a detached git worktree (no branches created), limited
+  to files the approved design named, compiles it with feedback, and the tests stage runs
+  the real suite in that workspace. Rollback is `git reset --hard`. Nothing merges.
+- 146 tests, all offline — the agent is tested through a fake `ILanguageModel`.
 
 Open decisions, not failures — the assignment requires none of these:
 - **Routes do not match the brief.** Built: `POST /api/urls`, `GET /{code}`,

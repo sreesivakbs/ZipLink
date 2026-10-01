@@ -37,7 +37,7 @@ src/
   ZipLink.Infrastructure   InMemoryShortUrlRepository                    -> Core
   ZipLink.Agentic          The orchestrator (CLI)                        -> Core
 tests/
-  ZipLink.Tests            129 tests                                     -> Core, Agentic
+  ZipLink.Tests            146 tests                                     -> Core, Agentic
 ```
 
 Inside `ZipLink.Agentic`, five layers, each usable on its own:
@@ -203,8 +203,8 @@ dependency. See [adr/0001-orchestration-built-in-house.md](adr/0001-orchestratio
 
 **Agents arrive one stage at a time.** The brief requires the engine to be proven with
 stub agents before real ones are plugged in, so it was. `requirements` and `impact` are
-real but deterministic; `design` is a real Claude-backed agent; `implement` and `docs`
-remain stubs that label themselves as such in their artifacts. `IStageExecutor` is the
+real but deterministic; `design` and `implement` are real Claude-backed agents; `docs`
+remains a stub that labels itself as such in its artifact. `IStageExecutor` is the
 seam each agent drops into, which is why adding one changed no engine code.
 
 **The agent proposes; it never decides.** Its output is schema-constrained and parsed,
@@ -215,6 +215,21 @@ gate, so nothing an agent writes is acted on without a human.
 **No credential reaches a stage.** The SDK reads `ANTHROPIC_API_KEY` from the
 environment itself; no key is held in a field, written to an artifact, or logged. With no
 key set, the stage falls back to the stub and the pipeline still runs.
+
+**Code is written in a sandbox, never in your working tree.** `implement` creates a
+detached `git worktree` outside the repository — detached deliberately, so **no branches
+are created**. Three constraints bound it:
+
+| Control | Behaviour |
+|---|---|
+| Allow list | It may write only files the *approved* design named. Anything else fails the stage, and a batch containing one bad path writes nothing at all. |
+| Protected paths | `.git`, `.ziplink`, `docs/`, `spikes/`, `CLAUDE.md`, `PROJECT_BRIEF.md`, `README.md` and `.gitignore` are refused **even if the design lists them** — governance and evidence are not an agent's to edit. Absolute paths and `..` traversal are rejected. |
+| Rollback | A genuine `git reset --hard` plus `git clean -fd`, so a failed implementation leaves the workspace on the commit it started from. |
+
+The agent compiles what it wrote and feeds compiler errors back to itself, bounded at
+three attempts, because an agent's claim that code is correct is worth nothing next to a
+compiler saying so. The `tests` stage then runs the real suite **in that workspace** —
+judging the agent's code rather than the code it was generated from. Nothing merges.
 
 **Deterministic checks decide pass/fail.** The `tests` stage shells out to `dotnet test`.
 An agent will never be asked whether its own work was correct.
@@ -239,8 +254,8 @@ run folder.
 Stated plainly, because an architecture document that only describes what exists is
 marketing:
 
-- **Only one agent.** `implement` and `docs` are still stubs; only `design` calls a model.
-- **No code generation** and no autonomous edits.
+- **Only two agents.** `docs` is still a stub.
+- **Nothing merges.** Agent code stays in its worktree; a human applies it or does not.
 - **No persistence beyond JSON files** — no database, no migrations.
 - **No budgets** (max LLM calls, tokens, wall-clock) — nothing consumes them yet.
 - **No provider fallback** — there is no provider.

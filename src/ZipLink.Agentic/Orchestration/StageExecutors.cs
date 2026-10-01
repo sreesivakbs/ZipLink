@@ -1,3 +1,4 @@
+using ZipLink.Agentic.Agents;
 using ZipLink.Agentic.Impact;
 using ZipLink.Agentic.Requirements;
 
@@ -125,7 +126,12 @@ public sealed class StubStageExecutor : IStageExecutor
     }
 }
 
-/// <summary>Delegates pass/fail to the real test suite.</summary>
+/// <summary>
+/// Delegates pass/fail to the real test suite.
+///
+/// When an implementation agent has produced a workspace, the suite runs *there* - the
+/// point is to judge the agent's code, not the code it was generated from.
+/// </summary>
 public sealed class TestsStageExecutor : IStageExecutor
 {
     private readonly ITestRunner _runner;
@@ -141,7 +147,14 @@ public sealed class TestsStageExecutor : IStageExecutor
         StageContext context,
         CancellationToken cancellationToken)
     {
-        var result = await _runner.RunAsync(context.RepositoryRoot, cancellationToken);
+        var implementation = context.Read<ImplementArtifact>(StagePipeline.Implement);
+
+        var target = implementation?.WorkspacePath is { Length: > 0 } workspace
+            && Directory.Exists(workspace)
+                ? workspace
+                : context.RepositoryRoot;
+
+        var result = await _runner.RunAsync(target, cancellationToken);
 
         var artifact = new TestsArtifact(result.Succeeded, result.Summary);
 

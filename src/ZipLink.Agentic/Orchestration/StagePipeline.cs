@@ -51,7 +51,9 @@ public sealed class StagePipeline
     /// runs offline and in CI. Either way the stage stays behind its approval gate.
     /// </summary>
     public static StagePipeline CreateDefault(
-        ITestRunner testRunner, IStageExecutor? designAgent = null)
+        ITestRunner testRunner,
+        IStageExecutor? designAgent = null,
+        IStageExecutor? implementAgent = null)
     {
         ArgumentNullException.ThrowIfNull(testRunner);
 
@@ -74,8 +76,10 @@ public sealed class StagePipeline
                 Design,
                 "No model configured; set ANTHROPIC_API_KEY to use the design agent. "
                 + "A human reviews the impact report instead."),
-            [Implement] = new StubStageExecutor(
-                Implement, "No implementation agent yet; no code was written."),
+            [Implement] = implementAgent ?? new StubStageExecutor(
+                Implement,
+                "No model configured; set ANTHROPIC_API_KEY to use the implementation "
+                + "agent. No code was written."),
             [Tests] = new TestsStageExecutor(testRunner),
             [Docs] = new StubStageExecutor(
                 Docs, "No documentation agent yet; nothing was generated."),

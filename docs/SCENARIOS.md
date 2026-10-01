@@ -1,6 +1,7 @@
 # Scenarios
 
-Three required scenarios — greenfield, brownfield, ambiguous — each executed through the
+Three required scenarios — greenfield, brownfield, ambiguous — plus a fourth run that
+carries a requirement all the way to tested code. Each executed through the
 orchestrator and recorded. The run folders under [`runs/`](runs/) are the actual output,
 copied unedited from `.ziplink/runs/`: `run.json`, the append-only `audit.jsonl`, and one
 artifact per stage.
@@ -64,11 +65,12 @@ reporting the three numbers rather than one.
 
 It shows the full lifecycle under governance, with real validation at the end.
 
-**It does not produce a URL shortener.** There is no implementation agent until Phase 3,
-so `implement` is a stub that records exactly that. The working shortener in `src/` was
-hand-built as the Phase 1 baseline and is the reference output this scenario will
-eventually be measured against. Reporting this run as "greenfield delivery" would be
-false; it is greenfield *planning, decomposition, governance and validation*.
+**It does not produce a URL shortener.** This run predates the implementation agent, so
+`implement` is a stub that records exactly that. The working shortener in `src/` was
+hand-built as the Phase 1 baseline and is the reference output this scenario would be
+measured against. Reporting this run as "greenfield delivery" would be false; it is
+greenfield *planning, decomposition, governance and validation*. Scenario 4 shows the
+same pipeline actually producing code.
 
 ---
 
@@ -125,7 +127,8 @@ requirements stage, including:
 ### What this does and does not show
 
 It shows real brownfield reasoning over an existing codebase and a governance stop before
-any change. It does not make the change — same Phase 3 limitation as scenario 1.
+any change. It does not make the change: the run stopped at the gate, and it predates the
+implementation agent. Scenario 4 carries a requirement all the way to tested code.
 
 ---
 
@@ -193,6 +196,59 @@ this specific system, which is Phase 3 agent work.
 
 ---
 
+---
+
+## 4. End to end with agents — "Block private and internal IP addresses when shortening a URL"
+
+**Evidence:** [`runs/05-implement-agent/`](runs/05-implement-agent/) including
+[`workspace.diff`](runs/05-implement-agent/workspace.diff) · 27 audit events
+
+Not one of the three required scenarios, but the one that closes the loop: a requirement
+becoming code that passes real tests, which is the project brief's Phase 3 exit gate.
+
+```
+  [x] requirements  Succeeded    0.02s   Risk Low, 0 ambiguity(ies)
+  [x] impact        Succeeded    0.10s   12 file(s) implicated
+  [x] design        Succeeded   44.28s   9 steps across 3 files   <- approved by a human
+  [x] implement     Succeeded   66.97s   3 file(s) written and compiling after 1 attempt
+  [x] tests         Succeeded    4.59s   Passed! 152 tests (in the agent's workspace)
+  [x] docs          Succeeded    0.01s   STUB
+  [x] release       Succeeded    0.00s                            <- approved by a human
+```
+
+The suite reports **152** rather than this repository's 146 because the agent added six
+of its own tests. It ran in the detached worktree, so it judged the agent's code.
+
+### What the agent produced
+
+A new `PrivateAddressGuard` in `ZipLink.Core`, three lines of wiring in
+`UrlShorteningService`, and parameterised tests — 269 insertions across the three files
+the approved design named, and no others.
+
+The guard refuses loopback, RFC1918, link-local, unique-local and CGNAT ranges, IPv6
+literals including bracketed and zone-indexed forms, and internal-looking hostnames. It
+performs **no DNS resolution**, so it stays deterministic.
+
+Two details worth noting, because they are the difference between generated code and
+*considered* code:
+
+- It blocks `http://169.254.169.254/latest/meta-data` — the cloud metadata endpoint, and
+  the exact gap recorded against this repository since the first architecture review.
+- Its "should be allowed" cases test **range boundaries**: `172.32.0.1` and
+  `100.128.0.1` sit just outside the private blocks, so the test would catch an
+  off-by-one in the mask arithmetic.
+
+The design stage had already flagged, unprompted, that alternative IP encodings
+(`http://2130706433/`, `http://0x7f.0.0.1/`) can bypass this kind of guard — a real
+limitation of the change, surfaced before it was written rather than discovered later.
+
+### What this does not show
+
+The change was **not merged**. It sits in the worktree for a human to review, which is
+the designed behaviour — no agent output reaches `main` without a person applying it.
+
+---
+
 ## Honest summary
 
 | Capability | Demonstrated? |
@@ -204,8 +260,10 @@ this specific system, which is Phase 3 agent work.
 | Parallel execution with synchronization | Yes — scenario 1 |
 | Deterministic validation | Yes — scenario 1, real `dotnet test` |
 | Audit trail and metrics | Yes — all three |
-| Bounded retries, rollback, safe-stop, re-planning | Implemented and tested; not exercised by these three runs |
-| **Code generation** | **No** — no implementation agent exists |
+| Bounded retries, rollback, safe-stop, re-planning | Implemented and tested; not exercised by these runs |
+| **Code generation** | **Yes** — scenario 4, verified by the real test suite |
 | **Options proposed for an ambiguous requirement** | **No** — dimensions named, not solutions |
 
-The two "No" rows are Phase 3 work and are not claimed anywhere in this repository.
+The remaining "No" row is Phase 3 agent work and is not claimed anywhere in this
+repository. Nothing an agent writes is merged: it stays in an isolated worktree for a
+human to review.

@@ -22,34 +22,37 @@ public sealed class OrchestratorCommands
         string repositoryRoot,
         ITestRunner? testRunner = null,
         TextWriter? output = null,
-        IStageExecutor? designAgent = null)
+        IStageExecutor? designAgent = null,
+        IStageExecutor? implementAgent = null)
     {
         _repositoryRoot = Path.GetFullPath(repositoryRoot);
         _store = new RunStore(_repositoryRoot);
         _out = output ?? Console.Out;
 
-        // A real agent is wired only when a credential exists; otherwise the stub keeps
+        // Real agents are wired only when a credential exists; otherwise the stubs keep
         // the pipeline runnable offline. Which mode is active is always announced,
         // because "the design stage ran" means different things in each.
-        var agent = designAgent ?? CreateDesignAgent(_out);
+        var configured = ClaudeLanguageModel.IsConfigured;
 
-        _pipeline = StagePipeline.CreateDefault(testRunner ?? new DotnetTestRunner(), agent);
-        _orchestrator = new Orchestrator(_pipeline, _store, _repositoryRoot);
-    }
-
-    private static IStageExecutor? CreateDesignAgent(TextWriter output)
-    {
-        if (!ClaudeLanguageModel.IsConfigured)
+        if (configured && (designAgent is null || implementAgent is null))
         {
-            return null;
+            _out.WriteLine(
+                $"Agents enabled ({ClaudeLanguageModel.DefaultModel}). The implementation "
+                + "agent writes to an isolated git worktree, never this working tree, and "
+                + "every proposal still requires human approval.");
+            _out.WriteLine();
         }
 
-        output.WriteLine(
-            $"Design agent enabled ({ClaudeLanguageModel.DefaultModel}). "
-            + "Its proposal still requires human approval.");
-        output.WriteLine();
+        var design = designAgent
+            ?? (configured ? new DesignAgentExecutor(new ClaudeLanguageModel()) : null);
 
-        return new DesignAgentExecutor(new ClaudeLanguageModel());
+        var implement = implementAgent
+            ?? (configured ? new ImplementAgentExecutor(new ClaudeLanguageModel()) : null);
+
+        _pipeline = StagePipeline.CreateDefault(
+            testRunner ?? new DotnetTestRunner(), design, implement);
+
+        _orchestrator = new Orchestrator(_pipeline, _store, _repositoryRoot);
     }
 
     public async Task<int> RunAsync(string requirement, CancellationToken cancellationToken = default)

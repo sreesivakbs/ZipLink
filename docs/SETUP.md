@@ -34,7 +34,7 @@ With no key set, the stage runs the stub and says so in its artifact. Either way
 human. Expect that stage to take roughly 30–60 seconds when the agent is enabled, and to
 cost a small amount per run.
 
-**Never commit a key.** Tests never call a model: all 129 run offline against a fake.
+**Never commit a key.** Tests never call a model: all 146 run offline against a fake.
 
 ### `dotnet` may not be on your PATH
 
@@ -78,7 +78,7 @@ Build succeeded.
     0 Warning(s)
     0 Error(s)
 
-Passed!  - Failed: 0, Passed: 129, Skipped: 0, Total: 129
+Passed!  - Failed: 0, Passed: 146, Skipped: 0, Total: 146
 ```
 
 The solution file is `ZipLink.slnx` (the newer XML format). There is no `.sln`.
