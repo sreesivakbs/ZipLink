@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\ZipLink.Agentic\ZipLink.Agentic.csproj" />
     <ProjectReference Include="..\..\src\ZipLink.Core\ZipLink.Core.csproj" />
   </ItemGroup>
 
