@@ -30,7 +30,8 @@ dotnet run --project src/ZipLink.Agentic -- run "Make it handle more traffic"
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, the stage graph, control flow, gates, state and audit, key decisions |
 | [docs/SCENARIOS.md](docs/SCENARIOS.md) | The three required scenarios, each as a recorded run with real output |
 | [docs/TESTING.md](docs/TESTING.md) | Testing approach, limitations, trade-offs |
-| [docs/adr/0001-orchestration-built-in-house.md](docs/adr/0001-orchestration-built-in-house.md) | Why the orchestration engine was written rather than adopted |
+| [docs/adr/0001-orchestration-built-in-house.md](docs/adr/0001-orchestration-built-in-house.md) | Why the orchestration engine was written rather than adopted — with a measured comparison |
+| [spikes/ZipLink.Spike.AgentFramework/](spikes/ZipLink.Spike.AgentFramework/README.md) | The same sub-graph built on Microsoft Agent Framework, and what that showed |
 | [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | The assignment, transcribed (read-only) |
 | [PROJECT_BRIEF.md](PROJECT_BRIEF.md) | Our design and phase roadmap |
 | [CLAUDE.md](CLAUDE.md) | Working rules and environment facts for AI-assisted development |

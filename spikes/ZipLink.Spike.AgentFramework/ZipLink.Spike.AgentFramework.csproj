@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.23.0" />
+  </ItemGroup>
+
+  <!--
+    Reuses the production analyzers so the comparison isolates orchestration.
+    The dependency points this way only: ZipLink.Agentic knows nothing about this
+    spike, and this project is deliberately absent from ZipLink.slnx so it cannot
+    affect the main build or test run.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ZipLink.Agentic\ZipLink.Agentic.csproj" />
+  </ItemGroup>
+
+</Project>
