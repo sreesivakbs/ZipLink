@@ -34,14 +34,21 @@ The orchestrator is the main focus. The shortener is the sample workload it buil
 Phase numbering follows the roadmap table in `PROJECT_BRIEF.md` section 7.
 Do not start work belonging to a later phase unless I ask.
 
-**Phase 1 — shortener baseline — in progress, exit gate NOT met.**
+**Phase 3 — first real agent wired behind the existing gates.**
 
 Built so far:
-- Shortener: create / redirect / click-count, in-memory store, 5 tests.
-- Read-only analysis tools in `src/ZipLink.Agentic`, all deterministic and
-  dependency-free: `RepositoryAnalyzer` (type and method inventory), `ImpactAnalyzer`
-  (ranks likely-impacted files with reasons, confidence, risks), `RequirementAnalyzer`
-  (normalizes a request, detects ambiguity, gates on human clarification).
+- Shortener: create / redirect / click-count, in-memory store.
+- Deterministic analysis in `src/ZipLink.Agentic`: `RepositoryAnalyzer` (type and method
+  inventory), `ImpactAnalyzer` (ranks likely-impacted files with reasons, confidence,
+  risks), `RequirementAnalyzer` (normalizes a request, detects ambiguity, gates on human
+  clarification).
+- Orchestration engine: stage DAG with entry/exit gates, parallel execution with
+  synchronization, approval checkpoints, bounded retries, rollback, safe-stop,
+  input-hash re-planning, append-only audit log, reliability metrics.
+- **One real agent — `design`** (`claude-opus-5`), schema-constrained, behind its
+  existing approval gate. Falls back to the stub when `ANTHROPIC_API_KEY` is unset, so
+  the pipeline still runs offline. `implement` and `docs` remain stubs.
+- 129 tests, all offline — the agent is tested through a fake `ILanguageModel`.
 
 Open decisions, not failures — the assignment requires none of these:
 - **Routes do not match the brief.** Built: `POST /api/urls`, `GET /{code}`,
@@ -90,10 +97,13 @@ brownfield and ambiguous scenarios, not baseline work.
 ## Tech stack
 
 **Actually in the repo today** — .NET 10 (SDK 10.0.401), C#, ASP.NET Core Minimal APIs,
-xUnit. That is the complete list. The only NuGet packages anywhere are
-`Microsoft.AspNetCore.OpenApi`, `Microsoft.NET.Test.Sdk`, `xunit`,
-`xunit.runner.visualstudio` and `coverlet.collector`. Storage is an in-memory
-dictionary. All analysis code is hand-written and dependency-free.
+xUnit, and the official `Anthropic` SDK (orchestrator only, for the design agent). The
+other packages are `Microsoft.AspNetCore.OpenApi`, `Microsoft.NET.Test.Sdk`, `xunit`,
+`xunit.runner.visualstudio` and `coverlet.collector`.
+`Microsoft.Agents.AI.Workflows` is referenced **only** by the isolated spike under
+`spikes/`, which is deliberately absent from `ZipLink.slnx`. Storage is an in-memory
+dictionary, and all analysis code is hand-written. The URL shortener depends on none of
+the AI packages and must never.
 
 **The assignment mandates no technology at all.** It names no language, framework,
 datastore or queue — the only tools it mentions are "Copilot/Claude" as examples of AI

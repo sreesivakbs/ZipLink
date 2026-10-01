@@ -15,7 +15,7 @@ The repository holds two pieces of software that must not be confused.
 | What | Shorten a URL, redirect, count clicks | Takes a requirement and runs it through an SDLC pipeline under human control |
 | Users | Anyone sharing links | A software engineer |
 | Runs as | ASP.NET Core web service | Local CLI |
-| Contains AI | **Never** | Yes (planned — see §7) |
+| Contains AI | **Never** | Yes - one agent today (see §7) |
 | Deployed | Yes | **Never** |
 
 The orchestrator is the focus of the assignment. The shortener is the sample workload it
@@ -37,7 +37,7 @@ src/
   ZipLink.Infrastructure   InMemoryShortUrlRepository                    -> Core
   ZipLink.Agentic          The orchestrator (CLI)                        -> Core
 tests/
-  ZipLink.Tests            116 tests                                     -> Core, Agentic
+  ZipLink.Tests            129 tests                                     -> Core, Agentic
 ```
 
 Inside `ZipLink.Agentic`, five layers, each usable on its own:
@@ -201,18 +201,29 @@ precisely to provide stateful graph execution with human interrupts. Adopting on
 have replaced the capability the assignment calls the critical differentiator with a
 dependency. See [adr/0001-orchestration-built-in-house.md](adr/0001-orchestration-built-in-house.md).
 
-**No LLM yet, by design.** The brief requires the engine to be proven with stub agents
-before real ones are plugged in. `requirements` and `impact` are real but deterministic;
-`design`, `implement` and `docs` are stubs that label themselves as such in their
-artifacts. `IStageExecutor` is the seam an agent drops into.
+**Agents arrive one stage at a time.** The brief requires the engine to be proven with
+stub agents before real ones are plugged in, so it was. `requirements` and `impact` are
+real but deterministic; `design` is a real Claude-backed agent; `implement` and `docs`
+remain stubs that label themselves as such in their artifacts. `IStageExecutor` is the
+seam each agent drops into, which is why adding one changed no engine code.
+
+**The agent proposes; it never decides.** Its output is schema-constrained and parsed,
+so a malformed answer is an ordinary stage failure that feeds the existing bounded-retry
+policy. A refusal becomes a gate rather than a failure. And `design` keeps its approval
+gate, so nothing an agent writes is acted on without a human.
+
+**No credential reaches a stage.** The SDK reads `ANTHROPIC_API_KEY` from the
+environment itself; no key is held in a field, written to an artifact, or logged. With no
+key set, the stage falls back to the stub and the pipeline still runs.
 
 **Deterministic checks decide pass/fail.** The `tests` stage shells out to `dotnet test`.
 An agent will never be asked whether its own work was correct.
 
-**Zero third-party dependencies in the orchestrator.** The assignment mandates no
-technology, and the 2–3 day timebox is better spent on orchestration than on
-infrastructure. Analysis is hand-written; persistence is JSON on disk; `System.Text.Json`
-and SHA-256 come from the BCL.
+**One third-party dependency in the orchestrator**, and only since the design agent: the
+Anthropic SDK. Everything else is hand-written - analysis, persistence as JSON on disk,
+`System.Text.Json` and SHA-256 from the BCL. The assignment mandates no technology, and
+the 2-3 day timebox is better spent on orchestration than on infrastructure. The URL
+shortener depends on none of it.
 
 **Artifacts are small flat records**, not serialized analyzer models — they are written
 to disk, read back by downstream stages, and meant to be legible to a human reading the
@@ -228,7 +239,7 @@ run folder.
 Stated plainly, because an architecture document that only describes what exists is
 marketing:
 
-- **No agents.** Three stages are stubs; no model is called anywhere.
+- **Only one agent.** `implement` and `docs` are still stubs; only `design` calls a model.
 - **No code generation** and no autonomous edits.
 - **No persistence beyond JSON files** — no database, no migrations.
 - **No budgets** (max LLM calls, tokens, wall-clock) — nothing consumes them yet.

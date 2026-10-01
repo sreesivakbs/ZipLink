@@ -45,7 +45,13 @@ public sealed class StagePipeline
             : throw new InvalidOperationException($"No executor registered for '{stageId}'.");
     }
 
-    public static StagePipeline CreateDefault(ITestRunner testRunner)
+    /// <summary>
+    /// The default pipeline. <paramref name="designAgent"/> is optional: when no model is
+    /// configured the design stage falls back to the stub, so the whole pipeline still
+    /// runs offline and in CI. Either way the stage stays behind its approval gate.
+    /// </summary>
+    public static StagePipeline CreateDefault(
+        ITestRunner testRunner, IStageExecutor? designAgent = null)
     {
         ArgumentNullException.ThrowIfNull(testRunner);
 
@@ -64,8 +70,10 @@ public sealed class StagePipeline
         {
             [Requirements] = new RequirementsStageExecutor(),
             [Impact] = new ImpactStageExecutor(),
-            [Design] = new StubStageExecutor(
-                Design, "No design agent yet; a human reviews the impact report instead."),
+            [Design] = designAgent ?? new StubStageExecutor(
+                Design,
+                "No model configured; set ANTHROPIC_API_KEY to use the design agent. "
+                + "A human reviews the impact report instead."),
             [Implement] = new StubStageExecutor(
                 Implement, "No implementation agent yet; no code was written."),
             [Tests] = new TestsStageExecutor(testRunner),

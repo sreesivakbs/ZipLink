@@ -1,0 +1,27 @@
+﻿{"TimestampUtc":"2026-10-01T14:59:21.2114014Z","RunId":"20261001-145921-38a324","Event":"RunStarted","Actor":"system","Detail":"Add custom short names and link expiration"}
+{"TimestampUtc":"2026-10-01T14:59:21.2269613Z","RunId":"20261001-145921-38a324","Stage":"requirements","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T14:59:21.7161679Z","RunId":"20261001-145921-38a324","Stage":"requirements","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T14:59:21.844776Z","RunId":"20261001-145921-38a324","Stage":"requirements","Event":"StageSucceeded","Actor":"system","Detail":"Risk Medium, 1 ambiguity(ies) detected."}
+{"TimestampUtc":"2026-10-01T14:59:21.9970215Z","RunId":"20261001-145921-38a324","Stage":"impact","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T14:59:22.160807Z","RunId":"20261001-145921-38a324","Stage":"impact","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T14:59:23.1395802Z","RunId":"20261001-145921-38a324","Stage":"impact","Event":"StageSucceeded","Actor":"system","Detail":"35 file(s) implicated, confidence Medium."}
+{"TimestampUtc":"2026-10-01T14:59:23.1437437Z","RunId":"20261001-145921-38a324","Stage":"design","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T14:59:23.1962742Z","RunId":"20261001-145921-38a324","Stage":"design","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:14.9031749Z","RunId":"20261001-145921-38a324","Stage":"design","Event":"StageAwaitingApproval","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:14.9311595Z","RunId":"20261001-145921-38a324","Event":"RunAwaitingApproval","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:40.7590614Z","RunId":"20261001-145921-38a324","Stage":"design","Event":"StageApproved","Actor":"sreed"}
+{"TimestampUtc":"2026-10-01T15:00:40.7662668Z","RunId":"20261001-145921-38a324","Stage":"implement","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:40.7904639Z","RunId":"20261001-145921-38a324","Stage":"implement","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:40.7994973Z","RunId":"20261001-145921-38a324","Stage":"implement","Event":"StageSucceeded","Actor":"system","Detail":"STUB: No implementation agent yet; no code was written."}
+{"TimestampUtc":"2026-10-01T15:00:40.8017689Z","RunId":"20261001-145921-38a324","Stage":"tests","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:40.8021266Z","RunId":"20261001-145921-38a324","Stage":"docs","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:40.8031003Z","RunId":"20261001-145921-38a324","Stage":"tests","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:40.8332599Z","RunId":"20261001-145921-38a324","Stage":"docs","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:40.8344732Z","RunId":"20261001-145921-38a324","Stage":"docs","Event":"StageSucceeded","Actor":"system","Detail":"STUB: No documentation agent yet; nothing was generated."}
+{"TimestampUtc":"2026-10-01T15:00:45.9210027Z","RunId":"20261001-145921-38a324","Stage":"tests","Event":"StageSucceeded","Actor":"system","Detail":"Passed!  - Failed:     0, Passed:   129, Skipped:     0, Total:   129, Duration: 2 s - ZipLink.Tests.dll (net10.0)"}
+{"TimestampUtc":"2026-10-01T15:00:45.9239008Z","RunId":"20261001-145921-38a324","Stage":"release","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:45.96012Z","RunId":"20261001-145921-38a324","Stage":"release","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:45.9629819Z","RunId":"20261001-145921-38a324","Stage":"release","Event":"StageAwaitingApproval","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:46.0024307Z","RunId":"20261001-145921-38a324","Event":"RunAwaitingApproval","Actor":"system"}
+{"TimestampUtc":"2026-10-01T15:00:50.6548753Z","RunId":"20261001-145921-38a324","Stage":"release","Event":"StageApproved","Actor":"sreed"}
+{"TimestampUtc":"2026-10-01T15:00:50.6738386Z","RunId":"20261001-145921-38a324","Event":"RunSucceeded","Actor":"system"}

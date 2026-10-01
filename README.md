@@ -12,7 +12,7 @@ The orchestrator is the focus. The shortener is the sample workload it analyses.
 
 ```bash
 dotnet build ZipLink.slnx
-dotnet test  ZipLink.slnx        # 116 tests, ~2s
+dotnet test  ZipLink.slnx        # 129 tests, ~3s
 
 # A requirement too vague to act on — stops and asks, exit code 2
 dotnet run --project src/ZipLink.Agentic -- run "Make it handle more traffic"
@@ -43,7 +43,7 @@ Recorded evidence for the three scenarios is in [docs/runs/](docs/runs/) — `ru
 
 ## Current state
 
-**Phase 2 — read-only repository and requirement intelligence.**
+**Phase 3 — first real agent, behind the existing gates.**
 
 Built:
 
@@ -57,16 +57,22 @@ Built:
   synchronization, human approval checkpoints, bounded retries, rollback, safe-stop,
   input-hash re-planning, append-only audit log, reliability metrics
 
+- **One real agent: `design`.** Backed by Claude (`claude-opus-5`), schema-constrained,
+  and still behind its human approval gate — it proposes, it never decides. It runs only
+  when `ANTHROPIC_API_KEY` is set; otherwise the stage falls back to a stub so the
+  pipeline stays runnable offline. See
+  [docs/runs/04-design-agent/](docs/runs/04-design-agent/) for a real proposal it produced.
+
 Not built, and not claimed anywhere:
 
-- **No AI agents.** `design`, `implement` and `docs` are stubs that say so in their own
-  artifacts. No model is called; the engine is being proven with fakes first, per the
-  project brief.
-- No code generation, no autonomous edits.
+- **`implement` and `docs` are still stubs** that say so in their own artifacts.
+- No code generation, no autonomous edits — nothing writes to `src/`.
 - No database, no message queue, no cloud dependency.
 
-Everything is deterministic and dependency-free: the orchestrator uses no third-party
-packages, and the only packages anywhere are ASP.NET Core OpenAPI and xUnit.
+Everything except the design agent is deterministic. Tests never call a model: all 129
+run offline against a fake. The only packages anywhere are ASP.NET Core OpenAPI, xUnit,
+and the Anthropic SDK in the orchestrator alone — the URL shortener has no AI dependency
+of any kind.
 
 ---
 
@@ -77,7 +83,7 @@ src/ZipLink.Api              HTTP layer            -> Core, Infrastructure
 src/ZipLink.Core             Domain + service      -> (nothing)
 src/ZipLink.Infrastructure   In-memory storage     -> Core
 src/ZipLink.Agentic          The orchestrator CLI  -> Core
-tests/ZipLink.Tests          116 tests             -> Core, Agentic
+tests/ZipLink.Tests          129 tests             -> Core, Agentic
 docs/                        Architecture, scenarios, setup, testing, ADRs, run evidence
 ```
 

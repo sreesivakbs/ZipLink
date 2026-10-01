@@ -8,8 +8,33 @@ Everything needed to clone, build, test and run both halves of the system.
 
 - **.NET SDK 10.0** (developed on 10.0.401) — `https://dotnet.microsoft.com/download`
 - **git**
-- No database, container runtime, cloud account or API key is required. The orchestrator
-  has no third-party dependencies and calls no external service.
+- No database, container runtime or cloud account is required.
+- **An Anthropic API key is optional.** Without one everything still builds, tests and
+  runs — the `design` stage falls back to a stub. With one, that stage becomes a real
+  agent. See [Enabling the design agent](#enabling-the-design-agent).
+
+### Enabling the design agent
+
+Set `ANTHROPIC_API_KEY` in the environment, or use .NET User Secrets. The SDK reads it
+directly; nothing in this repository stores, logs or forwards it, and no key is ever
+written into a run artifact.
+
+```powershell
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+```
+
+The orchestrator announces which mode it is in on startup:
+
+```
+Design agent enabled (claude-opus-5). Its proposal still requires human approval.
+```
+
+With no key set, the stage runs the stub and says so in its artifact. Either way the
+`design` approval gate is unchanged — an agent proposal is never acted on without a
+human. Expect that stage to take roughly 30–60 seconds when the agent is enabled, and to
+cost a small amount per run.
+
+**Never commit a key.** Tests never call a model: all 129 run offline against a fake.
 
 ### `dotnet` may not be on your PATH
 
@@ -53,7 +78,7 @@ Build succeeded.
     0 Warning(s)
     0 Error(s)
 
-Passed!  - Failed: 0, Passed: 116, Skipped: 0, Total: 116
+Passed!  - Failed: 0, Passed: 129, Skipped: 0, Total: 129
 ```
 
 The solution file is `ZipLink.slnx` (the newer XML format). There is no `.sln`.

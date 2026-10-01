@@ -1,3 +1,5 @@
+using ZipLink.Agentic.Agents;
+
 namespace ZipLink.Agentic.Orchestration;
 
 /// <summary>
@@ -19,13 +21,35 @@ public sealed class OrchestratorCommands
     public OrchestratorCommands(
         string repositoryRoot,
         ITestRunner? testRunner = null,
-        TextWriter? output = null)
+        TextWriter? output = null,
+        IStageExecutor? designAgent = null)
     {
         _repositoryRoot = Path.GetFullPath(repositoryRoot);
         _store = new RunStore(_repositoryRoot);
-        _pipeline = StagePipeline.CreateDefault(testRunner ?? new DotnetTestRunner());
-        _orchestrator = new Orchestrator(_pipeline, _store, _repositoryRoot);
         _out = output ?? Console.Out;
+
+        // A real agent is wired only when a credential exists; otherwise the stub keeps
+        // the pipeline runnable offline. Which mode is active is always announced,
+        // because "the design stage ran" means different things in each.
+        var agent = designAgent ?? CreateDesignAgent(_out);
+
+        _pipeline = StagePipeline.CreateDefault(testRunner ?? new DotnetTestRunner(), agent);
+        _orchestrator = new Orchestrator(_pipeline, _store, _repositoryRoot);
+    }
+
+    private static IStageExecutor? CreateDesignAgent(TextWriter output)
+    {
+        if (!ClaudeLanguageModel.IsConfigured)
+        {
+            return null;
+        }
+
+        output.WriteLine(
+            $"Design agent enabled ({ClaudeLanguageModel.DefaultModel}). "
+            + "Its proposal still requires human approval.");
+        output.WriteLine();
+
+        return new DesignAgentExecutor(new ClaudeLanguageModel());
     }
 
     public async Task<int> RunAsync(string requirement, CancellationToken cancellationToken = default)

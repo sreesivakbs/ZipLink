@@ -1,0 +1,82 @@
+﻿{
+  "RunId": "20261001-145921-38a324",
+  "Requirement": "Add custom short names and link expiration",
+  "CreatedAtUtc": "2026-10-01T14:59:21.0265438Z",
+  "Status": "Succeeded",
+  "Stages": [
+    {
+      "Id": "requirements",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T14:59:21.7159187Z",
+      "CompletedAtUtc": "2026-10-01T14:59:21.741603Z",
+      "Summary": "Risk Medium, 1 ambiguity(ies) detected.",
+      "ArtifactFile": "artifacts\\requirements.json",
+      "InputHash": "51C36988BE9B6EE4"
+    },
+    {
+      "Id": "impact",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T14:59:22.1608061Z",
+      "CompletedAtUtc": "2026-10-01T14:59:23.1285434Z",
+      "Summary": "35 file(s) implicated, confidence Medium.",
+      "ArtifactFile": "artifacts\\impact.json",
+      "InputHash": "AB1197B2FA6AE534"
+    },
+    {
+      "Id": "design",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T14:59:23.1962728Z",
+      "CompletedAtUtc": "2026-10-01T15:00:14.8988023Z",
+      "Summary": "11 step(s) proposed across 11 file(s); 8 open question(s).",
+      "ArtifactFile": "artifacts\\design.json",
+      "InputHash": "EFAE836F9F41E99D",
+      "DecidedBy": "sreed",
+      "DecidedAtUtc": "2026-10-01T15:00:40.7512503Z"
+    },
+    {
+      "Id": "implement",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T15:00:40.790463Z",
+      "CompletedAtUtc": "2026-10-01T15:00:40.7924473Z",
+      "Summary": "STUB: No implementation agent yet; no code was written.",
+      "ArtifactFile": "artifacts\\implement.json",
+      "InputHash": "5443E6E679EA4F98"
+    },
+    {
+      "Id": "tests",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T15:00:40.8030997Z",
+      "CompletedAtUtc": "2026-10-01T15:00:45.9073133Z",
+      "Summary": "Passed!  - Failed:     0, Passed:   129, Skipped:     0, Total:   129, Duration: 2 s - ZipLink.Tests.dll (net10.0)",
+      "ArtifactFile": "artifacts\\tests.json",
+      "InputHash": "4B73BA6A0E68DB94"
+    },
+    {
+      "Id": "docs",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T15:00:40.8332589Z",
+      "CompletedAtUtc": "2026-10-01T15:00:40.8337241Z",
+      "Summary": "STUB: No documentation agent yet; nothing was generated.",
+      "ArtifactFile": "artifacts\\docs.json",
+      "InputHash": "49D0E8B00CE7ED6C"
+    },
+    {
+      "Id": "release",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T15:00:45.9601188Z",
+      "CompletedAtUtc": "2026-10-01T15:00:45.9609743Z",
+      "Summary": "STUB: Release readiness summary pending final human approval.",
+      "ArtifactFile": "artifacts\\release.json",
+      "InputHash": "CDE342542A275FBA",
+      "DecidedBy": "sreed",
+      "DecidedAtUtc": "2026-10-01T15:00:50.6469599Z"
+    }
+  ]
+}

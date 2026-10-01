@@ -4,7 +4,7 @@
 
 ## Approach
 
-One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **116 tests,
+One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **129 tests,
 ~1.9k lines of test code against ~4.5k lines of source.** No mocking framework, no
 assertion library beyond xUnit — collaborators are small enough to hand-write fakes.
 
@@ -23,6 +23,7 @@ dotnet test ZipLink.slnx     # ~2 seconds
 | `RequirementAnalyzerTests` | 35 | All six ambiguity rule families, risk thresholds, the clarification gate, normalization, determinism |
 | `OrchestratorTests` | 19 | Graph ordering, parallelism and join, gates, approve/reject, failure isolation, persistence, audit, graph validation |
 | `OrchestratorResilienceTests` | 14 | Bounded retries, rollback, safe-stop, re-planning, metrics |
+| `DesignAgentExecutorTests` | 13 | Schema-constrained prompt, typed parse, malformed JSON retried, refusal gated not retried, upstream context passed, stub-vs-agent wiring |
 
 ### Three deliberate techniques
 
@@ -50,7 +51,8 @@ that seam the engine's tests would recursively invoke the test suite.
 ### Determinism
 
 No test touches the network, no test sleeps for more than 60 ms, and nothing calls a
-language model. `RetryPolicy.None` and explicit `MaxAttempts` keep retry tests from
+language model - the design agent is tested entirely through a fake ILanguageModel, which
+is why adding an agent did not slow the suite or make it flaky. `RetryPolicy.None` and explicit `MaxAttempts` keep retry tests from
 depending on timing. One test asserts determinism directly — the same requirement
 analysed twice must produce identical scores and questions.
 
