@@ -1,0 +1,59 @@
+﻿{
+  "RunId": "20261001-115259-1cea9a",
+  "Requirement": "Add custom short names and link expiration",
+  "CreatedAtUtc": "2026-10-01T11:52:59.3477935Z",
+  "Status": "AwaitingApproval",
+  "Stages": [
+    {
+      "Id": "requirements",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:52:59.4173965Z",
+      "CompletedAtUtc": "2026-10-01T11:52:59.4354516Z",
+      "Summary": "Risk Medium, 1 ambiguity(ies) detected.",
+      "ArtifactFile": "artifacts\\requirements.json",
+      "InputHash": "51C36988BE9B6EE4"
+    },
+    {
+      "Id": "impact",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:52:59.4454212Z",
+      "CompletedAtUtc": "2026-10-01T11:52:59.5731987Z",
+      "Summary": "31 file(s) implicated, confidence Medium.",
+      "ArtifactFile": "artifacts\\impact.json",
+      "InputHash": "AB1197B2FA6AE534"
+    },
+    {
+      "Id": "design",
+      "State": "AwaitingApproval",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:52:59.5883867Z",
+      "CompletedAtUtc": "2026-10-01T11:52:59.5890176Z",
+      "Summary": "STUB: No design agent yet; a human reviews the impact report instead.",
+      "GateReason": "Policy gate: this stage is high-impact and needs human approval.",
+      "ArtifactFile": "artifacts\\design.json",
+      "InputHash": "2DB78601FD6C888F"
+    },
+    {
+      "Id": "implement",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "tests",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "docs",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "release",
+      "State": "Pending",
+      "Attempts": 0
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+﻿{
+  "RunId": "20261001-115142-c4d822",
+  "Requirement": "Make it handle more traffic",
+  "CreatedAtUtc": "2026-10-01T11:51:42.6289157Z",
+  "Status": "AwaitingApproval",
+  "Stages": [
+    {
+      "Id": "requirements",
+      "State": "AwaitingApproval",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:42.7061737Z",
+      "CompletedAtUtc": "2026-10-01T11:51:42.7279959Z",
+      "Summary": "Risk High, 2 ambiguity(ies) detected.",
+      "GateReason": "Risk is High (score 4). Implementing this without clarification would mean guessing at the requester\u0027s intent.",
+      "ArtifactFile": "artifacts\\requirements.json",
+      "InputHash": "AE364B3FF1C26056"
+    },
+    {
+      "Id": "impact",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "design",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "implement",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "tests",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "docs",
+      "State": "Pending",
+      "Attempts": 0
+    },
+    {
+      "Id": "release",
+      "State": "Pending",
+      "Attempts": 0
+    }
+  ]
+}

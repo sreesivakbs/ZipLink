@@ -1,0 +1,5 @@
+﻿{"TimestampUtc":"2026-10-01T11:51:42.6871291Z","RunId":"20261001-115142-c4d822","Event":"RunStarted","Actor":"system","Detail":"Make it handle more traffic"}
+{"TimestampUtc":"2026-10-01T11:51:42.6945621Z","RunId":"20261001-115142-c4d822","Stage":"requirements","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-01T11:51:42.7062648Z","RunId":"20261001-115142-c4d822","Stage":"requirements","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-01T11:51:42.7352162Z","RunId":"20261001-115142-c4d822","Stage":"requirements","Event":"StageBlocked","Actor":"system","Detail":"Risk is High (score 4). Implementing this without clarification would mean guessing at the requester\u0027s intent."}
+{"TimestampUtc":"2026-10-01T11:51:42.7477785Z","RunId":"20261001-115142-c4d822","Event":"RunAwaitingApproval","Actor":"system"}

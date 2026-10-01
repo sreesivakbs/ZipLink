@@ -1,0 +1,82 @@
+﻿{
+  "RunId": "20261001-115136-82acb0",
+  "Requirement": "Build a URL shortener",
+  "CreatedAtUtc": "2026-10-01T11:51:36.5717069Z",
+  "Status": "Succeeded",
+  "Stages": [
+    {
+      "Id": "requirements",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:36.6533563Z",
+      "CompletedAtUtc": "2026-10-01T11:51:36.6748377Z",
+      "Summary": "Risk Low, 0 ambiguity(ies) detected.",
+      "ArtifactFile": "artifacts\\requirements.json",
+      "InputHash": "F1B7AF8367C3A3E3"
+    },
+    {
+      "Id": "impact",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:36.6888955Z",
+      "CompletedAtUtc": "2026-10-01T11:51:36.8237455Z",
+      "Summary": "10 file(s) implicated, confidence High.",
+      "ArtifactFile": "artifacts\\impact.json",
+      "InputHash": "01F71C741DE0E3EA"
+    },
+    {
+      "Id": "design",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:36.8278628Z",
+      "CompletedAtUtc": "2026-10-01T11:51:36.8284224Z",
+      "Summary": "STUB: No design agent yet; a human reviews the impact report instead.",
+      "ArtifactFile": "artifacts\\design.json",
+      "InputHash": "78CCDEA611C0EA35",
+      "DecidedBy": "sreed",
+      "DecidedAtUtc": "2026-10-01T11:51:51.5946848Z"
+    },
+    {
+      "Id": "implement",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:51.6472807Z",
+      "CompletedAtUtc": "2026-10-01T11:51:51.6537178Z",
+      "Summary": "STUB: No implementation agent yet; no code was written.",
+      "ArtifactFile": "artifacts\\implement.json",
+      "InputHash": "3A49D676C907C594"
+    },
+    {
+      "Id": "tests",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:51.6970384Z",
+      "CompletedAtUtc": "2026-10-01T11:51:55.3631345Z",
+      "Summary": "Passed!  - Failed:     0, Passed:   116, Skipped:     0, Total:   116, Duration: 1 s - ZipLink.Tests.dll (net10.0)",
+      "ArtifactFile": "artifacts\\tests.json",
+      "InputHash": "14C19397F7BD92FF"
+    },
+    {
+      "Id": "docs",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:51.7398318Z",
+      "CompletedAtUtc": "2026-10-01T11:51:51.7401603Z",
+      "Summary": "STUB: No documentation agent yet; nothing was generated.",
+      "ArtifactFile": "artifacts\\docs.json",
+      "InputHash": "3CCAA77054CF6F92"
+    },
+    {
+      "Id": "release",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-01T11:51:55.3950914Z",
+      "CompletedAtUtc": "2026-10-01T11:51:55.3960418Z",
+      "Summary": "STUB: Release readiness summary pending final human approval.",
+      "ArtifactFile": "artifacts\\release.json",
+      "InputHash": "DD5A2346FECA17E0",
+      "DecidedBy": "sreed",
+      "DecidedAtUtc": "2026-10-01T11:51:57.7536541Z"
+    }
+  ]
+}
