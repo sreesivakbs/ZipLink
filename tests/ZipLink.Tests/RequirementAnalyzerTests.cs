@@ -150,6 +150,56 @@ public class RequirementAnalyzerTests
         Assert.Contains("secure", analysis.ClarificationRationale);
     }
 
+    // The brief's canonical ambiguous scenario. It must reach the gate, because the
+    // human is the one who chooses between caching, async processing and so on.
+    [Fact]
+    public void ScalabilityWordingWithNoTargetRequiresClarification()
+    {
+        var analysis = Analyze("Make it handle more traffic");
+
+        Assert.Equal(RiskLevel.High, analysis.RiskLevel);
+        Assert.True(analysis.RequiresHumanClarification);
+
+        Assert.Contains(
+            analysis.Ambiguities,
+            ambiguity => ambiguity.Category == AmbiguityCategory.VagueQualityAttribute
+                && ambiguity.Trigger == "traffic");
+    }
+
+    [Theory]
+    [InlineData("target requests per second")]
+    [InlineData("concurrent users")]
+    [InlineData("expected data growth")]
+    public void ScalabilityQuestionsNameTheMissingNumbers(string dimension)
+    {
+        Assert.Contains(
+            Analyze("Make it handle more traffic").ClarificationQuestions,
+            question => question.Contains(dimension, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("Reduce the load on the database")]
+    [InlineData("Increase capacity for peak periods")]
+    [InlineData("Support more concurrent users")]
+    public void OtherScalabilityVocabularyIsAlsoRecognised(string requirement)
+    {
+        Assert.Contains(
+            Analyze(requirement).Ambiguities,
+            ambiguity => ambiguity.Category == AmbiguityCategory.VagueQualityAttribute);
+    }
+
+    [Fact]
+    public void AQuantifiedScalabilityTargetStillAsksWhatToMeasureButDoesNotBlock()
+    {
+        // A number removes the "no stated target" problem, so the comparative rule is
+        // suppressed and the requirement is actionable.
+        var analysis = Analyze("Handle 5000 requests per second");
+
+        Assert.DoesNotContain(
+            analysis.Ambiguities,
+            ambiguity => ambiguity.Category == AmbiguityCategory.UnquantifiedComparative);
+    }
+
     [Fact]
     public void RequirementWithNoConcreteSubjectIsBlocked()
     {

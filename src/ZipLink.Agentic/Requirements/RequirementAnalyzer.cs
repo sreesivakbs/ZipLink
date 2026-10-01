@@ -50,9 +50,10 @@ public sealed class RequirementAnalyzer
             SecuritySensitive: false),
 
         new("scalability",
-            ["scalable", "scalability", "scaling"],
+            ["scalable", "scalability", "scaling", "scale", "traffic", "load", "volume",
+             "capacity", "concurrent", "concurrency"],
             ["target requests per second", "concurrent users", "expected data growth",
-             "horizontal or vertical scaling"],
+             "horizontal or vertical scaling", "acceptable cost ceiling"],
             SecuritySensitive: false),
 
         new("reliability",
@@ -259,7 +260,12 @@ public sealed class RequirementAnalyzer
                 Explanation =
                     $"'{trigger}' names a {attribute.Name} goal without saying which "
                     + "property is in scope or how it will be verified.",
-                Weight = attribute.SecuritySensitive ? 4 : 2
+
+                // Security blocks on its own, because guessing at an unstated security
+                // requirement is the costliest error available. Any other undefined
+                // quality goal blocks as soon as it is joined by a second ambiguity -
+                // "more traffic" states a direction with no destination.
+                Weight = attribute.SecuritySensitive ? 4 : 3
             });
 
             questions.Add(

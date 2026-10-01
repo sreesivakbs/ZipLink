@@ -297,22 +297,27 @@ public sealed class ImpactAnalyzer
         if (unmatchedTerms.Count > 0)
         {
             var words = string.Join(", ", unmatchedTerms.Select(term => $"'{term.Word}'"));
+            var single = unmatchedTerms.Count == 1;
 
             risks.Add(
-                $"No code anywhere matches {words}. That concept is probably not modelled "
-                + "yet, so the files needed to implement it cannot be identified "
-                + "lexically and are likely missing from the list below.");
+                $"No code anywhere matches {words}. "
+                + $"{(single ? "That concept is" : "Those concepts are")} probably not "
+                + "modelled yet, so the files needed to implement "
+                + $"{(single ? "it" : "them")} cannot be identified lexically and are "
+                + "likely missing from the ranking.");
         }
 
         if (commonTerms.Count > 0)
         {
             var words = string.Join(", ", commonTerms.Select(term => $"'{term.Word}'"));
+            var single = commonTerms.Count == 1;
 
             risks.Add(
-                $"{words} appear in more than half of the {repository.FileCount} scanned "
-                + "files, so they cannot discriminate between candidates. Their "
-                + "contribution was reduced, which may have demoted a genuinely "
-                + "impacted file.");
+                $"{words} {(single ? "appears" : "appear")} in more than half of the "
+                + $"{repository.FileCount} scanned files, so "
+                + $"{(single ? "it cannot" : "they cannot")} discriminate between "
+                + $"candidates. {(single ? "Its" : "Their")} contribution was reduced, "
+                + "which may have demoted a genuinely impacted file.");
         }
 
         risks.Add(
