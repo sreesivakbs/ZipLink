@@ -6,6 +6,8 @@ namespace ZipLink.Core.Services;
 
 public class UrlShorteningService
 {
+    private const int ShortCodeLength = 10;
+
     private readonly IShortUrlRepository _repository;
 
     public UrlShorteningService(IShortUrlRepository repository)
@@ -67,6 +69,6 @@ public class UrlShorteningService
     {
         return Guid.NewGuid()
             .ToString("N")
-            .Substring(0, 7);
+            .Substring(0, ShortCodeLength);
     }
 }

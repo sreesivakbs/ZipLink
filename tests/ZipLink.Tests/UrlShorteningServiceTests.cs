@@ -19,7 +19,23 @@ public class UrlShorteningServiceTests
         Assert.NotNull(result);
         Assert.Equal("https://www.example.com", result.OriginalUrl);
         Assert.False(string.IsNullOrWhiteSpace(result.ShortCode));
-        Assert.Equal(7, result.ShortCode.Length);
+        Assert.Equal(10, result.ShortCode.Length);
+    }
+
+    [Fact]
+    public async Task CreateShortUrl_ThenResolve_ReturnsOriginalUrlForTenCharacterCode()
+    {
+        var repository = new FakeShortUrlRepository();
+        var service = new UrlShorteningService(repository);
+
+        var created = await service.CreateShortUrlAsync("https://www.example.com/docs?page=2");
+
+        Assert.Equal(10, created.ShortCode.Length);
+
+        var resolved = await service.ResolveAsync(created.ShortCode);
+
+        Assert.NotNull(resolved);
+        Assert.Equal("https://www.example.com/docs?page=2", resolved!.OriginalUrl);
     }
 
     [Fact]
@@ -114,6 +130,26 @@ public class UrlShorteningServiceTests
 
         Assert.NotNull(result);
         Assert.Equal("https://www.example.com", result!.OriginalUrl);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_WithLegacySevenCharacterCode_StillResolves()
+    {
+        var repository = new FakeShortUrlRepository();
+
+        await repository.AddAsync(new ShortUrl
+        {
+            OriginalUrl = "https://legacy.example.com/page",
+            ShortCode = "old1234"
+        });
+
+        var service = new UrlShorteningService(repository);
+
+        var result = await service.ResolveAsync("old1234");
+
+        Assert.NotNull(result);
+        Assert.Equal(7, result!.ShortCode.Length);
+        Assert.Equal("https://legacy.example.com/page", result.OriginalUrl);
     }
 
     [Fact]
