@@ -4,7 +4,7 @@
 
 ## Approach
 
-One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **205 tests,
+One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **216 tests,
 ~1.9k lines of test code against ~4.5k lines of source.** No mocking framework, no
 assertion library beyond xUnit — collaborators are small enough to hand-write fakes.
 

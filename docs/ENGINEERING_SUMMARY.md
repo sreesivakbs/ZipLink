@@ -16,11 +16,11 @@ Two pieces exist, sharing no runtime code:
 - **The URL shortener** — ASP.NET Core: create, redirect, click analytics, with a guard
   against private and internal addresses. Contains no AI and never will; a redirect must
   be fast and deterministic.
-- **The orchestrator** — a local CLI that takes a plain-English requirement and runs it
-  through a stage graph under approval gates, policy checks, bounded retries, rollback and
-  an audit trail. Never deployed.
+- **The orchestrator** - a local tool, with a web control panel and a CLI, that takes a
+  plain-English requirement and runs it through a stage graph under approval gates, policy
+  checks, bounded retries, rollback and an audit trail. Localhost only. Never deployed.
 
-**Status:** 13 commits, 205 tests, zero build warnings, format gate clean. Three agents
+**Status:** 16 commits, 216 tests, zero build warnings, format gate clean. Three agents
 (`design`, `implement`, `docs`) plus two deterministic analysis stages. The loop closes:
 a requirement becomes code that a real test suite judges.
 
@@ -66,7 +66,7 @@ anyway", unlike the design and release gates.
 
 Three layers:
 
-1. **205 unit tests**, all offline. Agents are tested through a fake `ILanguageModel`, so
+1. **216 unit tests**, all offline. Agents are tested through a fake `ILanguageModel`, so
    the suite neither slowed nor became flaky when agents arrived.
 2. **The engine's own guarantees** — parallelism asserted as a fact via a shared execution
    log, not hoped for; rollback asserted by checking artifacts are actually deleted.
@@ -92,8 +92,8 @@ shown to have any.
 
 - The assignment mandates **no technology** — verified, it names none. Every stack choice
   is ours and optional, so the simplest thing that satisfies a requirement won.
-- A 2–3 day timebox makes orchestration depth worth more than infrastructure breadth. No
-  database, queue or cloud service was added.
+- A 2-3 day timebox makes orchestration depth worth more than infrastructure breadth. No
+  database, queue or cloud service was added - links persist to a JSON file instead.
 - Identifier names are meaningful enough for lexical impact analysis to be a useful hint.
 - Scoring weights and thresholds throughout (impact: type 5 / method 4 / file 3; ambiguity
   High ≥ 4) are judgment, **not calibration**. No corpus was used.

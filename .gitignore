@@ -483,3 +483,10 @@ $RECYCLE.BIN/
 
 # Agentic orchestrator run state (local only)
 .ziplink/
+
+# Link store written by the shortener at runtime
+App_Data/
+*.links.json
+links.json
+links.json.tmp
+links.json.corrupt-*

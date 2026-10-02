@@ -38,7 +38,7 @@ src/
   ZipLink.Agentic          The orchestrator                              -> Core
   ZipLink.Studio           Localhost-only web control panel              -> Agentic
 tests/
-  ZipLink.Tests            205 tests                                     -> Core, Agentic
+  ZipLink.Tests            216 tests                                     -> Core, Agentic
 ```
 
 Inside `ZipLink.Agentic`, seven layers, each usable on its own:

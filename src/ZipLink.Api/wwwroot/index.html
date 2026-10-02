@@ -94,9 +94,10 @@
     </div>
     <div id="history"><div class="empty">Nothing yet — shorten a link above.</div></div>
     <p class="note">
-      This list is kept in this browser, so it is yours alone and survives a refresh.
-      Links themselves live in the service's memory, so they disappear if it restarts —
-      any that have gone are marked below rather than quietly dropped.
+      This list is kept in this browser, so it is yours alone. The links themselves are
+      stored by the service and survive a restart; click counts come from the service, not
+      from this page. Anything the service no longer recognises is marked below rather
+      than quietly showing a stale count.
     </p>
   </div>
 
@@ -166,9 +167,10 @@ async function shorten() {
   }
 }
 
-/// Asks the service for the current count of every stored link. A 404 means the link no
-/// longer exists - almost always because the service restarted and its in-memory store
-/// was emptied - so the row is marked rather than silently showing a stale number.
+/// Asks the service for the current count of every stored link. A 404 means the service
+/// no longer has that code - the store file was removed, or this browser remembers a link
+/// created against a different store - so the row is marked rather than silently showing
+/// a stale number.
 async function refreshCounts() {
   const links = load();
   if (links.length === 0) return;

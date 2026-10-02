@@ -4,7 +4,13 @@ using ZipLink.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<IShortUrlRepository, InMemoryShortUrlRepository>();
+// Links are kept in a JSON file so they survive a restart. The path is configurable
+// (ZipLink:LinksFile) and defaults to App_Data next to the content root.
+var linksFile = builder.Configuration["ZipLink:LinksFile"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "links.json");
+
+builder.Services.AddSingleton<IShortUrlRepository>(
+    _ => new JsonFileShortUrlRepository(linksFile));
 builder.Services.AddScoped<UrlShorteningService>();
 
 builder.Services.AddOpenApi();

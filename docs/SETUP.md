@@ -36,7 +36,7 @@ approval gates are unchanged - an agent proposal is never acted on without a hum
 Expect design to take roughly 30-60 seconds and implement one to two minutes when enabled,
 and to cost a small amount per run. A per-run budget caps model calls and wall-clock.
 
-**Never commit a key.** Tests never call a model: all 205 run offline against a fake.
+**Never commit a key.** Tests never call a model: all 216 run offline against a fake.
 
 ### `dotnet` may not be on your PATH
 
@@ -80,7 +80,7 @@ Build succeeded.
     0 Warning(s)
     0 Error(s)
 
-Passed!  - Failed: 0, Passed: 205, Skipped: 0, Total: 205
+Passed!  - Failed: 0, Passed: 216, Skipped: 0, Total: 216
 ```
 
 The solution file is `ZipLink.slnx` (the newer XML format). There is no `.sln`.
@@ -150,7 +150,10 @@ curl -k -s https://localhost:7179/api/urls/<code>/analytics       # clickCount: 
 > `-d '{"url":"..."}'` does not survive PowerShell quoting and reaches the server as
 > malformed JSON.
 
-Storage is an in-memory dictionary — links do not survive a restart.
+Links are stored in a JSON file (`src/ZipLink.Api/App_Data/links.json` by default,
+override with `ZipLink:LinksFile`), so they survive a restart. The file is gitignored.
+Reads are served from memory; the file is rewritten on each change, written to a temporary
+name and moved into place so a crash cannot leave a truncated file.
 
 ---
 
@@ -273,4 +276,5 @@ Delete `.ziplink/` at any time to start clean; it holds no configuration.
 | `Failed to determine the https port for redirect` | Started the API with the `http` profile — use `--launch-profile https` |
 | Dev certificate warning | `dotnet dev-certs https --trust` |
 | `400 Bad Request` posting JSON from PowerShell | Inline `-d` quoting — use `--data-binary "@file.json"` |
-| Short links vanish after restart | Expected — storage is in-memory |
+| Short links vanish after restart | The store file was deleted or `ZipLink:LinksFile` points somewhere new. Default is `src/ZipLink.Api/App_Data/links.json` |
+| A link shows "no longer available" on the page | The service no longer has that code - usually the store file was removed |

@@ -37,7 +37,8 @@ Do not start work belonging to a later phase unless I ask.
 **Phase 3-4 - three agents behind gates, with policy guardrails and budgets.**
 
 Built so far:
-- Shortener: create / redirect / click-count, in-memory store.
+- Shortener: create / redirect / click-count, links persisted to a JSON file
+  (`JsonFileShortUrlRepository`, path from `ZipLink:LinksFile`, gitignored).
 - Deterministic analysis in `src/ZipLink.Agentic`: `RepositoryAnalyzer` (type and method
   inventory), `ImpactAnalyzer` (ranks likely-impacted files with reasons, confidence,
   risks), `RequirementAnalyzer` (normalizes a request, detects ambiguity, gates on human
@@ -61,7 +62,7 @@ Built so far:
   and metrics. Binds 127.0.0.1:5280. Must never be deployed; it calls a model, writes
   files and runs git.
 - The shortener has a plain static page at its root. No AI in it, ever.
-- 205 tests, all offline — the agent is tested through a fake `ILanguageModel`.
+- 216 tests, all offline — the agent is tested through a fake `ILanguageModel`.
 
 Open decisions, not failures — the assignment requires none of these:
 - **Routes do not match the brief.** Built: `POST /api/urls`, `GET /{code}`,
@@ -69,9 +70,8 @@ Open decisions, not failures — the assignment requires none of these:
   `GET /links/{code}/stats`. Pick one shape before agents generate code against the
   other; the brownfield scenario targets these endpoints.
 - No health check, structured logging, or rate limiting.
-- Storage is an in-memory dictionary. The brief's "integration tests on real SQL Server"
-  gate is a self-imposed goal, not an assignment requirement — drop it unless a
-  requirement genuinely needs durable storage.
+- Storage is a JSON file, not a database. The brief's "integration tests on real SQL
+  Server" gate is a self-imposed goal, not an assignment requirement.
 - Analysis is regex-based rather than Roslyn. Also self-imposed; revisit only if regex
   demonstrably fails the task.
 - Phase 0 (Aspire, analyzers, user secrets, gitleaks, CI) was skipped. Re-scope it to
@@ -110,8 +110,8 @@ xUnit, and the official `Anthropic` SDK (orchestrator only, for the design agent
 other packages are `Microsoft.AspNetCore.OpenApi`, `Microsoft.NET.Test.Sdk`, `xunit`,
 `xunit.runner.visualstudio` and `coverlet.collector`.
 `Microsoft.Agents.AI.Workflows` is referenced **only** by the isolated spike under
-`spikes/`, which is deliberately absent from `ZipLink.slnx`. Storage is an in-memory
-dictionary, and all analysis code is hand-written. The URL shortener depends on none of
+`spikes/`, which is deliberately absent from `ZipLink.slnx`. Storage is a JSON file - no
+database - and all analysis code is hand-written. The URL shortener depends on none of
 the AI packages and must never.
 
 **The assignment mandates no technology at all.** It names no language, framework,
