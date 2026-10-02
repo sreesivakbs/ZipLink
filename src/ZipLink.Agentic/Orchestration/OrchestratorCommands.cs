@@ -23,7 +23,8 @@ public sealed class OrchestratorCommands
         ITestRunner? testRunner = null,
         TextWriter? output = null,
         IStageExecutor? designAgent = null,
-        IStageExecutor? implementAgent = null)
+        IStageExecutor? implementAgent = null,
+        IStageExecutor? docsAgent = null)
     {
         _repositoryRoot = Path.GetFullPath(repositoryRoot);
         _store = new RunStore(_repositoryRoot);
@@ -34,23 +35,34 @@ public sealed class OrchestratorCommands
         // because "the design stage ran" means different things in each.
         var configured = ClaudeLanguageModel.IsConfigured;
 
-        if (configured && (designAgent is null || implementAgent is null))
+        if (configured && designAgent is null && implementAgent is null && docsAgent is null)
         {
             _out.WriteLine(
-                $"Agents enabled ({ClaudeLanguageModel.DefaultModel}). The implementation "
-                + "agent writes to an isolated git worktree, never this working tree, and "
-                + "every proposal still requires human approval.");
+                $"Agents enabled ({ClaudeLanguageModel.DefaultModel}), budget "
+                + $"{RunBudget.Default.MaxModelCalls} model calls / "
+                + $"{RunBudget.Default.EffectiveWallClock.TotalMinutes:0} min per run. The "
+                + "implementation agent writes to an isolated git worktree, never this "
+                + "working tree, and every proposal still requires human approval.");
             _out.WriteLine();
         }
 
+        // One budgeted model shared by every agent, so the cap is per run rather than
+        // per agent and a new agent cannot quietly escape it.
+        var model = configured
+            ? new BudgetedLanguageModel(new ClaudeLanguageModel(), RunBudget.Default)
+            : null;
+
         var design = designAgent
-            ?? (configured ? new DesignAgentExecutor(new ClaudeLanguageModel()) : null);
+            ?? (model is null ? null : new DesignAgentExecutor(model));
 
         var implement = implementAgent
-            ?? (configured ? new ImplementAgentExecutor(new ClaudeLanguageModel()) : null);
+            ?? (model is null ? null : new ImplementAgentExecutor(model));
+
+        var docs = docsAgent
+            ?? (model is null ? null : new DocsAgentExecutor(model));
 
         _pipeline = StagePipeline.CreateDefault(
-            testRunner ?? new DotnetTestRunner(), design, implement);
+            testRunner ?? new DotnetTestRunner(), design, implement, docs);
 
         _orchestrator = new Orchestrator(_pipeline, _store, _repositoryRoot);
     }

@@ -58,7 +58,8 @@ public sealed class StagePipeline
     public static StagePipeline CreateDefault(
         ITestRunner testRunner,
         IStageExecutor? designAgent = null,
-        IStageExecutor? implementAgent = null)
+        IStageExecutor? implementAgent = null,
+        IStageExecutor? docsAgent = null)
     {
         ArgumentNullException.ThrowIfNull(testRunner);
 
@@ -88,8 +89,10 @@ public sealed class StagePipeline
                 + "agent. No code was written."),
             [Tests] = new TestsStageExecutor(testRunner),
             [Policy] = new PolicyStageExecutor(),
-            [Docs] = new StubStageExecutor(
-                Docs, "No documentation agent yet; nothing was generated."),
+            [Docs] = docsAgent ?? new StubStageExecutor(
+                Docs,
+                "No model configured; set ANTHROPIC_API_KEY to use the documentation "
+                + "agent. Nothing was generated."),
             [Release] = new StubStageExecutor(
                 Release, "Release readiness summary pending final human approval.")
         };
