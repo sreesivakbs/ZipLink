@@ -4,6 +4,7 @@
     <Project Path="src/ZipLink.Api/ZipLink.Api.csproj" />
     <Project Path="src/ZipLink.Core/ZipLink.Core.csproj" />
     <Project Path="src/ZipLink.Infrastructure/ZipLink.Infrastructure.csproj" />
+    <Project Path="src/ZipLink.Studio/ZipLink.Studio.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ZipLink.Tests/ZipLink.Tests.csproj" />

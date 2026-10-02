@@ -93,14 +93,30 @@ dotnet format --verify-no-changes ZipLink.slnx
 
 ---
 
+## The two web pages
+
+There are two applications, each with one page, and they are deliberately **not** the
+same app:
+
+| | Page | Command | Address |
+|---|---|---|---|
+| Product | Shorten a link, see click counts | `dotnet run --project src/ZipLink.Api --launch-profile https` | `https://localhost:7179` |
+| Developer tool | Submit a requirement, watch stages, approve or reject | `dotnet run --project src/ZipLink.Studio` | `http://127.0.0.1:5280` |
+
+The shortener contains no AI and is the thing you would deploy. **ZipLink Studio calls a
+model, writes files and runs git**, so it binds to `127.0.0.1` only and must never be
+exposed — anyone who can reach that port can spend your API budget and generate code.
+
+---
+
 ## Running the URL shortener
 
 ```bash
 dotnet run --project src/ZipLink.Api --launch-profile https
 ```
 
-Listens on `https://localhost:7179` and `http://localhost:5272`. OpenAPI is served at
-`/openapi/v1.json` in Development.
+Listens on `https://localhost:7179` and `http://localhost:5272`. Open the root address for
+the page; OpenAPI is served at `/openapi/v1.json` in Development.
 
 Two first-run notes:
 
@@ -138,7 +154,27 @@ Storage is an in-memory dictionary — links do not survive a restart.
 
 ---
 
-## Running the orchestrator
+## Running ZipLink Studio (the control panel)
+
+```bash
+dotnet run --project src/ZipLink.Studio
+```
+
+Then open `http://127.0.0.1:5280`. The page shows every run, the stage graph as it
+executes, and — when a stage is waiting — an **Approve** and **Reject** button with the
+reason it stopped. It also shows each stage's output, the audit log and the metrics.
+
+Starting a run returns immediately and the page polls for progress, because a run takes
+minutes. Nothing is merged: the implementation agent writes to an isolated copy of the
+repository and a human decides whether to take it.
+
+The banner at the top says whether agents are live or stubbed, and the per-run budget.
+
+---
+
+## Running the orchestrator from the command line
+
+Everything the page does is also available as a CLI.
 
 ```bash
 dotnet run --project src/ZipLink.Agentic -- <command>

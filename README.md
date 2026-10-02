@@ -4,9 +4,10 @@ Two pieces of software in one repository:
 
 1. **URL shortener (the product)** — an ASP.NET Core service: shorten a URL, redirect,
    count clicks. Contains no AI, ever.
-2. **Agentic SDLC orchestrator (the factory)** — a local CLI that takes a requirement and
-   runs it through an SDLC pipeline under human approval gates, with policy checks,
-   bounded retries, rollback, safe-stop and an audit trail. Never deployed.
+2. **Agentic SDLC orchestrator (the factory)** — a local tool, with a web control panel
+   and a CLI, that takes a requirement and runs it through an SDLC pipeline under human
+   approval gates, with policy checks, bounded retries, rollback, safe-stop and an audit
+   trail. Binds to localhost. Never deployed.
 
 The orchestrator is the focus. The shortener is the sample workload it analyses.
 
@@ -14,8 +15,11 @@ The orchestrator is the focus. The shortener is the sample workload it analyses.
 dotnet build ZipLink.slnx
 dotnet test  ZipLink.slnx        # 205 tests, ~3s
 
-# A requirement too vague to act on — stops and asks, exit code 2
-dotnet run --project src/ZipLink.Agentic -- run "Make it handle more traffic"
+# The shortener, with a web page at https://localhost:7179
+dotnet run --project src/ZipLink.Api --launch-profile https
+
+# The agent control panel at http://127.0.0.1:5280 (localhost only)
+dotnet run --project src/ZipLink.Studio
 ```
 
 > If `dotnet` is not on your PATH, use the full path — see [SETUP.md](docs/SETUP.md).
@@ -67,6 +71,10 @@ Built:
   unapproved NuGet packages. No model is consulted, so an agent cannot argue past it, and
   a violation fails outright — there is no "approve anyway".
 - **Per-run budgets** cap model calls and wall-clock time, bounded by construction.
+- **Two web pages.** The shortener has one for end users. **ZipLink Studio** is a
+  localhost-only control panel where you submit a requirement, watch the stages run, and
+  click Approve or Reject on a gate - the governance the CLI expresses as exit code 2,
+  made visible.
 - **The loop closes.** `implement` writes code into an **isolated detached git worktree**
   — never your working tree, and no branches are created — restricted to the files the
   approved design named. It compiles what it wrote, feeding compiler errors back to
@@ -96,7 +104,8 @@ kind.
 src/ZipLink.Api              HTTP layer            -> Core, Infrastructure
 src/ZipLink.Core             Domain + service      -> (nothing)
 src/ZipLink.Infrastructure   In-memory storage     -> Core
-src/ZipLink.Agentic          The orchestrator CLI  -> Core
+src/ZipLink.Agentic          The orchestrator      -> Core
+src/ZipLink.Studio           Control panel (web)   -> Agentic   [localhost only]
 tests/ZipLink.Tests          205 tests             -> Core, Agentic
 docs/                        Architecture, scenarios, setup, testing, ADRs, run evidence
 ```

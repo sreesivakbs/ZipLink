@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!--
+    The developer control panel for the orchestrator. It is deliberately a separate
+    application from ZipLink.Api: this one calls a model, writes files and runs git, and
+    must never be reachable from the deployed URL shortener. It binds to localhost only.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\ZipLink.Agentic\ZipLink.Agentic.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZipLink</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --card: #ffffff; --line: #e2e5ec; --text: #1b1e27;
+    --dim: #6b7280; --accent: #2563eb; --ok: #15803d; --bad: #b91c1c;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11131a; --card: #181b24; --line: #2b3040; --text: #e6e9f0;
+      --dim: #949cb0; --accent: #6ea8fe; --ok: #4ade80; --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .lede { color: var(--dim); margin: 0 0 22px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px;
+  }
+  label { display: block; font-size: 13px; color: var(--dim); margin-bottom: 6px; }
+  .row { display: flex; gap: 8px; }
+  input {
+    flex: 1; padding: 11px 12px; font: inherit; color: var(--text);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  }
+  button {
+    background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+    padding: 11px 18px; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .result, .error { margin-top: 16px; padding: 14px; border-radius: 8px; display: none; }
+  .result { background: var(--bg); border: 1px solid var(--line); }
+  .error { background: var(--bg); border: 1px solid var(--bad); color: var(--bad); }
+  .short { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .short a { font-family: var(--mono); font-size: 16px; color: var(--accent); word-break: break-all; }
+  .copy { background: transparent; color: var(--dim); border: 1px solid var(--line); padding: 5px 10px; font-size: 13px; }
+  .stats { margin-top: 12px; font-size: 13px; color: var(--dim); }
+  .stats b { color: var(--text); font-family: var(--mono); }
+  footer { margin-top: 18px; font-size: 12px; color: var(--dim); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ZipLink</h1>
+  <p class="lede">Paste a long link, get a short one, and see how often it is opened.</p>
+
+  <div class="card">
+    <label for="url">Long URL</label>
+    <div class="row">
+      <input id="url" type="url" placeholder="https://example.com/a/very/long/path" autocomplete="off" />
+      <button id="go">Shorten</button>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="result" id="result">
+      <div class="short">
+        <a id="link" href="#" target="_blank" rel="noopener"></a>
+        <button class="copy" id="copy">Copy</button>
+      </div>
+      <div class="stats">
+        Opened <b id="clicks">0</b> times ·
+        <a href="#" id="refresh" style="color:var(--dim)">refresh</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>Links are kept in memory and disappear when the service restarts.</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let code = null;
+
+function show(el, on) { el.style.display = on ? 'block' : 'none'; }
+
+async function shorten() {
+  const url = $('url').value.trim();
+  if (!url) return;
+
+  $('go').disabled = true;
+  show($('error'), false);
+
+  try {
+    const res = await fetch('/api/urls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+
+    const body = await res.json();
+
+    if (!res.ok) {
+      $('error').textContent = body.error ?? 'That link could not be shortened.';
+      show($('error'), true);
+      show($('result'), false);
+      return;
+    }
+
+    code = body.shortCode;
+    $('link').textContent = body.shortUrl;
+    $('link').href = body.shortUrl;
+    $('clicks').textContent = '0';
+    show($('result'), true);
+  } catch {
+    $('error').textContent = 'Could not reach the service.';
+    show($('error'), true);
+  } finally {
+    $('go').disabled = false;
+  }
+}
+
+async function refreshStats() {
+  if (!code) return;
+  const res = await fetch(`/api/urls/${code}/analytics`);
+  if (res.ok) $('clicks').textContent = (await res.json()).clickCount;
+}
+
+$('go').onclick = shorten;
+$('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') shorten(); });
+$('refresh').onclick = (e) => { e.preventDefault(); refreshStats(); };
+$('copy').onclick = async () => {
+  await navigator.clipboard.writeText($('link').textContent);
+  $('copy').textContent = 'Copied';
+  setTimeout(() => ($('copy').textContent = 'Copy'), 1200);
+};
+</script>
+</body>
+</html>

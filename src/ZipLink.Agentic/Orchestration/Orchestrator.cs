@@ -63,6 +63,18 @@ public sealed class Orchestrator
         string requirement,
         CancellationToken cancellationToken = default)
     {
+        var state = CreateRun(requirement);
+
+        return await ExecuteAsync(state, cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates and persists a run without executing it, so a caller can learn the run id
+    /// immediately and watch progress rather than blocking for the minutes a run takes.
+    /// Pair with <see cref="ExecuteAsync(string, CancellationToken)"/>.
+    /// </summary>
+    public RunState CreateRun(string requirement)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(requirement);
 
         var state = new RunState
@@ -77,7 +89,19 @@ public sealed class Orchestrator
         _store.Save(state);
         Audit(state, null, "RunStarted", SystemActor, state.Requirement);
 
-        return await ExecuteAsync(state, cancellationToken);
+        return state;
+    }
+
+    /// <summary>
+    /// Drives an existing run forward. Unlike <see cref="ResumeAsync"/> this does not
+    /// re-plan or record a resume, because the run has not been paused - it is simply
+    /// being executed by a different caller than the one that created it.
+    /// </summary>
+    public async Task<RunState> ExecuteAsync(
+        string runId,
+        CancellationToken cancellationToken = default)
+    {
+        return await ExecuteAsync(Require(runId), cancellationToken);
     }
 
     public async Task<RunState> ResumeAsync(

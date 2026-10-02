@@ -56,6 +56,11 @@ Built so far:
 - **`implement` writes code** into a detached git worktree (no branches created), limited
   to files the approved design named, compiles it with feedback, and the tests stage runs
   the real suite in that workspace. Rollback is `git reset --hard`. Nothing merges.
+- **ZipLink Studio** (`src/ZipLink.Studio`): localhost-only web control panel over the
+  same engine - start a run, watch stages, approve/reject gates, read artifacts, audit
+  and metrics. Binds 127.0.0.1:5280. Must never be deployed; it calls a model, writes
+  files and runs git.
+- The shortener has a plain static page at its root. No AI in it, ever.
 - 205 tests, all offline — the agent is tested through a fake `ILanguageModel`.
 
 Open decisions, not failures — the assignment requires none of these:

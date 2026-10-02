@@ -18,6 +18,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// The shortener's own page. Static files only - this service contains no AI and never
+// will; the agent control panel is a separate, localhost-only application.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapPost("/api/urls", async (
     CreateShortUrlRequest request,
     UrlShorteningService service,

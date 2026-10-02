@@ -14,7 +14,7 @@ The repository holds two pieces of software that must not be confused.
 |---|---|---|
 | What | Shorten a URL, redirect, count clicks | Takes a requirement and runs it through an SDLC pipeline under human control |
 | Users | Anyone sharing links | A software engineer |
-| Runs as | ASP.NET Core web service | Local CLI |
+| Runs as | ASP.NET Core web service | Local web control panel + CLI |
 | Contains AI | **Never** | Yes - three agents today (see §7) |
 | Deployed | Yes | **Never** |
 
@@ -35,7 +35,8 @@ src/
   ZipLink.Api              HTTP layer: create, redirect, analytics       -> Core, Infrastructure
   ZipLink.Core             ShortUrl, IShortUrlRepository, service        -> (nothing)
   ZipLink.Infrastructure   InMemoryShortUrlRepository                    -> Core
-  ZipLink.Agentic          The orchestrator (CLI)                        -> Core
+  ZipLink.Agentic          The orchestrator                              -> Core
+  ZipLink.Studio           Localhost-only web control panel              -> Agentic
 tests/
   ZipLink.Tests            205 tests                                     -> Core, Agentic
 ```
