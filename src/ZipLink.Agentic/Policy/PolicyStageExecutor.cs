@@ -19,20 +19,38 @@ public sealed record PolicyArtifact(
 /// </summary>
 public sealed class PolicyStageExecutor : IStageExecutor
 {
-    public Task<StageResult> ExecuteAsync(
+    public async Task<StageResult> ExecuteAsync(
         StageContext context,
         CancellationToken cancellationToken)
     {
         var implementation = context.Read<ImplementArtifact>(StagePipeline.Implement);
 
+        var workspacePath = implementation?.WorkspacePath;
+
+        var hasWorkspace = workspacePath is { Length: > 0 } && Directory.Exists(workspacePath);
+
         // Scan the agent's workspace when there is one; otherwise this repository, so the
         // gate still means something on a run with no implementation stage.
-        var target = implementation?.WorkspacePath is { Length: > 0 } workspace
-            && Directory.Exists(workspace)
-                ? workspace
-                : context.RepositoryRoot;
+        var target = hasWorkspace ? workspacePath! : context.RepositoryRoot;
 
         var report = PolicyScanner.Scan(target);
+
+        var allFindings = report.Findings.ToList();
+
+        // Coverage can only shrink relative to something, so this rule needs the diff and
+        // only applies when an agent actually changed code.
+        if (hasWorkspace)
+        {
+            var diff = await DotnetCli.GitAsync(
+                target, ["diff", "--cached", "--", "tests/"], cancellationToken);
+
+            if (TestCoverageGuard.Inspect(diff.Output) is { } regression)
+            {
+                allFindings.Add(regression);
+            }
+        }
+
+        report = report with { Findings = allFindings };
 
         var findings = report.Findings
             .Select(finding =>
@@ -44,14 +62,14 @@ public sealed class PolicyStageExecutor : IStageExecutor
 
         if (report.Passed)
         {
-            return Task.FromResult(StageResult.Success(
-                $"{report.FilesScanned} file(s) scanned; no policy violations.", artifact));
+            return StageResult.Success(
+                $"{report.FilesScanned} file(s) scanned; no policy violations.", artifact);
         }
 
-        return Task.FromResult(new StageResult(
+        return new StageResult(
             StageOutcome.Failed,
             $"{report.Violations} policy violation(s) across {report.FilesScanned} file(s): "
             + string.Join("; ", findings.Take(3)),
-            artifact));
+            artifact);
     }
 }

@@ -21,6 +21,18 @@ public sealed record LanguageModelResult(string Json, bool Refused, string? Refu
 }
 
 /// <summary>
+/// The model ran out of output budget mid-answer. Distinct from a parse failure because
+/// the remedy is different: retrying the same request unchanged will truncate again.
+/// </summary>
+public sealed class ModelOutputTruncatedException : Exception
+{
+    public ModelOutputTruncatedException(string message)
+        : base(message)
+    {
+    }
+}
+
+/// <summary>
 /// The orchestrator's only view of a language model.
 ///
 /// Deliberately narrow and expressed in BCL types so that stages never see a vendor SDK,

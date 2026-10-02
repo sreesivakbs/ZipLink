@@ -22,7 +22,14 @@ public sealed class ClaudeLanguageModel : ILanguageModel
     private readonly string _model;
     private readonly int _maxTokens;
 
-    public ClaudeLanguageModel(string? model = null, int maxTokens = 16000)
+    /// <summary>
+    /// Writing several whole files in one answer needs far more room than a 16k default.
+    /// A truncated answer costs a full generation and yields nothing parseable, so the
+    /// limit is generous and the request is streamed to stay clear of HTTP timeouts.
+    /// </summary>
+    public const int DefaultMaxTokens = 64000;
+
+    public ClaudeLanguageModel(string? model = null, int maxTokens = DefaultMaxTokens)
     {
         _client = new AnthropicClient();
         _model = model ?? DefaultModel;
@@ -43,7 +50,7 @@ public sealed class ClaudeLanguageModel : ILanguageModel
         IReadOnlyDictionary<string, JsonElement> jsonSchema,
         CancellationToken cancellationToken)
     {
-        var response = await _client.Messages.Create(new MessageCreateParams
+        var parameters = new MessageCreateParams
         {
             Model = _model,
             MaxTokens = _maxTokens,
@@ -58,22 +65,43 @@ public sealed class ClaudeLanguageModel : ILanguageModel
                         entry => entry.Key, entry => entry.Value, StringComparer.Ordinal)
                 }
             }
-        });
+        };
 
-        // A refusal arrives as a successful HTTP response, so stop_reason must be checked
-        // before the content is read.
-        if (string.Equals(response.StopReason?.ToString(), "refusal", StringComparison.Ordinal))
+        var text = new StringBuilder();
+        string? stopReason = null;
+
+        // Streamed because a large MaxTokens on a single request risks an HTTP timeout,
+        // and a timeout after several minutes of generation wastes the whole attempt.
+        await foreach (var streamEvent in _client.Messages.CreateStreaming(parameters)
+            .WithCancellation(cancellationToken))
+        {
+            if (streamEvent.TryPickContentBlockDelta(out var delta)
+                && delta.Delta.TryPickText(out var chunk))
+            {
+                text.Append(chunk.Text);
+            }
+            else if (streamEvent.TryPickDelta(out var messageDelta))
+            {
+                stopReason = messageDelta.Delta.StopReason?.ToString();
+            }
+        }
+
+        // A refusal arrives as a successful response, so stop_reason must be checked
+        // before the content is trusted.
+        if (string.Equals(stopReason, "refusal", StringComparison.Ordinal))
         {
             return LanguageModelResult.Refusal(
                 "The model declined this request. A human should review the requirement "
                 + "before it is retried.");
         }
 
-        var text = new StringBuilder();
-
-        foreach (var block in response.Content.Select(block => block.Value).OfType<TextBlock>())
+        // Truncation produces half a JSON document, which otherwise surfaces downstream as
+        // a baffling parse error. Say what actually happened.
+        if (string.Equals(stopReason, "max_tokens", StringComparison.Ordinal))
         {
-            text.Append(block.Text);
+            throw new ModelOutputTruncatedException(
+                $"The answer hit the {_maxTokens}-token output limit and was cut off. "
+                + "Narrow the scope of the change, or raise the limit.");
         }
 
         return LanguageModelResult.Answer(text.ToString());
