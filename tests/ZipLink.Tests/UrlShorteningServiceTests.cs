@@ -19,23 +19,49 @@ public class UrlShorteningServiceTests
         Assert.NotNull(result);
         Assert.Equal("https://www.example.com", result.OriginalUrl);
         Assert.False(string.IsNullOrWhiteSpace(result.ShortCode));
-        Assert.Equal(10, result.ShortCode.Length);
+        Assert.Equal(15, result.ShortCode.Length);
     }
 
     [Fact]
-    public async Task CreateShortUrl_ThenResolve_ReturnsOriginalUrlForTenCharacterCode()
+    public async Task CreateShortUrl_ThenResolve_ReturnsOriginalUrlForFifteenCharacterCode()
     {
         var repository = new FakeShortUrlRepository();
         var service = new UrlShorteningService(repository);
 
         var created = await service.CreateShortUrlAsync("https://www.example.com/docs?page=2");
 
-        Assert.Equal(10, created.ShortCode.Length);
+        Assert.Equal(15, created.ShortCode.Length);
 
         var resolved = await service.ResolveAsync(created.ShortCode);
 
         Assert.NotNull(resolved);
         Assert.Equal("https://www.example.com/docs?page=2", resolved!.OriginalUrl);
+    }
+
+    [Fact]
+    public async Task CreateShortUrl_ManyTimes_ProducesUniqueFifteenCharacterUrlSafeCodes()
+    {
+        var repository = new FakeShortUrlRepository();
+        var service = new UrlShorteningService(repository);
+
+        var codes = new List<string>();
+
+        for (var i = 0; i < 100; i++)
+        {
+            var created = await service.CreateShortUrlAsync($"https://www.example.com/page/{i}");
+            codes.Add(created.ShortCode);
+        }
+
+        Assert.All(codes, code =>
+        {
+            Assert.Equal(15, code.Length);
+            Assert.All(code, c => Assert.True(
+                (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'),
+                $"Unexpected character '{c}' in short code '{code}'."));
+        });
+
+        Assert.Equal(codes.Count, codes.Distinct().Count());
+        Assert.Equal(codes.Count, repository.Count);
     }
 
     [Fact]
