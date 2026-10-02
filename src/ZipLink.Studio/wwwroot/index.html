@@ -199,6 +199,7 @@ async function refresh() {
 
   html += `<div class="tabs">
       <button data-tab="stages" class="${tab==='stages'?'on':''}">Stages</button>
+      <button data-tab="adopt" class="${tab==='adopt'?'on':''}">Take the code</button>
       <button data-tab="audit" class="${tab==='audit'?'on':''}">Audit log</button>
       <button data-tab="metrics" class="${tab==='metrics'?'on':''}">Metrics</button>
     </div><div id="tabBody"></div>`;
@@ -221,6 +222,7 @@ async function refresh() {
     b.onclick = () => { tab = b.dataset.tab; refresh(); });
 
   if (tab === 'stages') renderStages(run);
+  else if (tab === 'adopt') await renderAdopt();
   else if (tab === 'audit') await renderAudit();
   else await renderMetrics();
 
@@ -254,6 +256,67 @@ async function showArtifact(stageId) {
   const res = await fetch(`/api/runs/${selected}/artifacts/${stageId}`);
   const text = res.ok ? JSON.stringify(JSON.parse(await res.text()), null, 2) : 'No output recorded.';
   $('tabBody').innerHTML = `<h2>${stageId} output</h2><pre>${escapeHtml(text)}</pre>`;
+}
+
+// The handoff from sandbox to working tree. Deliberately a button a person presses: the
+// agent's code is written in an isolated worktree, and nothing reaches the repository the
+// developer is working in until a human asks for it.
+async function renderAdopt(plan) {
+  const p = plan ?? await json(`/api/runs/${selected}/adoption`);
+
+  let html = `<h2>Take the code into your working copy</h2>
+    <div class="sub" style="color:var(--dim); margin-bottom:12px;">
+      The agent wrote its code in an isolated copy of the project. This copies it into your
+      repository so you can rebuild and run it. Nothing is committed, and it is refused
+      unless implement, tests and policy all passed and your working tree is clean.
+    </div>`;
+
+  if (p.changes.length) {
+    html += `<div class="stage" style="display:block;">
+      <div class="name" style="margin-bottom:8px;">${p.applied ? 'Copied' : 'Would copy'} ${p.changes.length} file(s)</div>
+      ${p.changes.map(c => `<div class="sub" style="font-family:var(--mono);">
+        <span style="color:var(--dim);">${escapeHtml(c.description)}</span> &nbsp; ${escapeHtml(c.path)}
+      </div>`).join('')}
+    </div>`;
+  }
+
+  for (const w of p.warnings) {
+    html += `<div class="sub" style="color:var(--warn); margin-top:8px;">${escapeHtml(w)}</div>`;
+  }
+
+  if (p.blockers.length) {
+    html += `<div class="gate fail" style="margin-top:12px;">
+      <h3>Not safe to copy yet</h3>
+      ${p.blockers.map(b => `<div>• ${escapeHtml(b)}</div>`).join('')}
+    </div>`;
+  }
+
+  if (p.applied) {
+    html += `<div class="gate" style="margin-top:12px;">
+      <h3>Done — now rebuild</h3>
+      <div>The files are in your working copy as uncommitted changes. Rebuild and restart
+      the shortener to run the new code. To undo it all: <span style="font-family:var(--mono)">git restore .</span></div>
+    </div>`;
+  } else if (p.canApply) {
+    html += `<div class="row" style="margin-top:12px;">
+      <button id="doAdopt">Copy these files into my repository</button>
+    </div>`;
+  }
+
+  $('tabBody').innerHTML = html;
+
+  const button = $('doAdopt');
+
+  if (button) {
+    button.onclick = async () => {
+      button.disabled = true;
+      button.textContent = 'Copying…';
+
+      const res = await fetch(`/api/runs/${selected}/adopt`, post({}));
+
+      await renderAdopt(await res.json());
+    };
+  }
 }
 
 async function renderAudit() {

@@ -228,6 +228,82 @@ public sealed class OrchestratorCommands
         return ExitOk;
     }
 
+    /// <summary>
+    /// Takes a finished run's code out of its sandbox and into this working tree.
+    ///
+    /// Previews by default. Writing is the deliberate second step, because this is the one
+    /// verb that changes the repository a human is working in.
+    /// </summary>
+    public async Task<int> AdoptAsync(
+        string? runId,
+        bool apply,
+        string actor,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryResolve(runId, out var resolved))
+        {
+            return ExitInvalidInput;
+        }
+
+        var adoption = new WorkspaceAdoption(_store, _repositoryRoot);
+
+        var plan = apply
+            ? await adoption.ApplyAsync(resolved, actor, cancellationToken)
+            : await adoption.PlanAsync(resolved, cancellationToken);
+
+        _out.WriteLine($"Adopting run {resolved}");
+        _out.WriteLine(new string('=', 13 + resolved.Length));
+        _out.WriteLine();
+
+        if (plan.Changes.Count > 0)
+        {
+            var heading = plan.Applied ? "COPIED INTO THIS WORKING TREE" : "WOULD COPY";
+
+            _out.WriteLine(heading);
+            _out.WriteLine(new string('-', heading.Length));
+
+            foreach (var change in plan.Changes)
+            {
+                _out.WriteLine($"  {change.Description,-10} {change.Path}");
+            }
+
+            _out.WriteLine();
+        }
+
+        foreach (var warning in plan.Warnings)
+        {
+            _out.WriteLine($"warning: {warning}");
+        }
+
+        if (plan.Warnings.Count > 0)
+        {
+            _out.WriteLine();
+        }
+
+        if (plan.Blockers.Count > 0)
+        {
+            _out.WriteLine("REFUSED");
+            _out.WriteLine("-------");
+
+            foreach (var blocker in plan.Blockers)
+            {
+                _out.WriteLine($"  - {blocker}");
+            }
+
+            _out.WriteLine();
+            _out.WriteLine("Nothing was written.");
+
+            return ExitInvalidInput;
+        }
+
+        _out.WriteLine(plan.Applied
+            ? "Nothing was committed. Review with 'git diff', then rebuild and restart the "
+                + "shortener to see the change. Undo with 'git restore .'."
+            : "Preview only. Re-run with --apply to copy these files.");
+
+        return ExitOk;
+    }
+
     public int List()
     {
         var runs = _store.ListRunIds();

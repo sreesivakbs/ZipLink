@@ -29,6 +29,9 @@ builder.Services.AddSingleton(provider => new Orchestrator(
     provider.GetRequiredService<StagePipeline>(),
     provider.GetRequiredService<RunStore>(),
     repositoryRoot));
+builder.Services.AddSingleton(provider => new WorkspaceAdoption(
+    provider.GetRequiredService<RunStore>(),
+    repositoryRoot));
 
 var app = builder.Build();
 
@@ -176,6 +179,23 @@ app.MapPost("/api/runs/{runId}/stop", (string runId, Orchestrator orchestrator) 
     orchestrator.Stop(runId, Environment.UserName);
 
     return Results.Accepted();
+});
+
+// Preview: what adopting this run would change in the working tree. Writes nothing, so
+// the panel can show it beside every finished run.
+app.MapGet("/api/runs/{runId}/adoption", async (
+    string runId, WorkspaceAdoption adoption, CancellationToken token) =>
+    Results.Ok(await adoption.PlanAsync(runId, token)));
+
+// The only endpoint that writes to the developer's own working tree. It is a human
+// pressing a button, never something a run does to itself, and it refuses unless the
+// deterministic gates passed and the tree is clean.
+app.MapPost("/api/runs/{runId}/adopt", async (
+    string runId, WorkspaceAdoption adoption, CancellationToken token) =>
+{
+    var plan = await adoption.ApplyAsync(runId, Environment.UserName, token);
+
+    return plan.Applied ? Results.Ok(plan) : Results.BadRequest(plan);
 });
 
 Console.WriteLine("ZipLink Studio — http://127.0.0.1:5280  (localhost only)");

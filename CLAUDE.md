@@ -57,12 +57,17 @@ Built so far:
 - **`implement` writes code** into a detached git worktree (no branches created), limited
   to files the approved design named, compiles it with feedback, and the tests stage runs
   the real suite in that workspace. Rollback is `git reset --hard`. Nothing merges.
+- **Adoption** (`WorkspaceAdoption`, CLI `adopt`, Studio's "Take the code" tab): the one
+  path from an agent workspace into this working tree. Human-triggered only, never part of
+  a run. Refused unless `implement`, `tests` and `policy` all succeeded and the tree is
+  clean; re-applies the sandbox path rules; refuses deletions and renames rather than
+  skipping them; commits nothing, so the undo is `git restore .`. Audited either way.
 - **ZipLink Studio** (`src/ZipLink.Studio`): localhost-only web control panel over the
   same engine - start a run, watch stages, approve/reject gates, read artifacts, audit
   and metrics. Binds 127.0.0.1:5280. Must never be deployed; it calls a model, writes
   files and runs git.
 - The shortener has a plain static page at its root. No AI in it, ever.
-- 240 tests, all offline — the agent is tested through a fake `ILanguageModel`.
+- 257 tests, all offline — the agent is tested through a fake `ILanguageModel`.
 
 Open decisions, not failures — the assignment requires none of these:
 - **Routes do not match the brief.** Built: `POST /api/urls`, `GET /{code}`,
@@ -147,6 +152,9 @@ Run from the repository root; prefix each with `& "C:\Program Files\dotnet\dotne
 - Format check: `format --verify-no-changes ZipLink.slnx` (currently passes clean)
 - Run the shortener: `run --project src/ZipLink.Api --launch-profile https`
 - Run the orchestrator CLI: `run --project src/ZipLink.Agentic -- "<requirement>"`
+- Preview taking a run's code: `run --project src/ZipLink.Agentic -- adopt latest`
+- Actually take it: `run --project src/ZipLink.Agentic -- adopt latest --apply`
+  (then rebuild; the undo is `git restore .`)
 
 There is no `src/AppHost` yet; that arrives with Aspire. Until then the two executables
 are started separately.

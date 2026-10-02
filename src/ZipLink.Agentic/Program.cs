@@ -40,6 +40,13 @@ if (args.Length > 0)
         case "replan":
             return new OrchestratorCommands(repoRoot).Replan(rest.FirstOrDefault());
 
+        // Previews by default: --apply is the explicit act of changing this working tree.
+        case "adopt":
+            return await new OrchestratorCommands(repoRoot).AdoptAsync(
+                rest.FirstOrDefault(arg => !arg.StartsWith("--", StringComparison.Ordinal)),
+                rest.Any(arg => string.Equals(arg, "--apply", StringComparison.OrdinalIgnoreCase)),
+                Environment.UserName);
+
         case "approve":
             if (rest.Length < 2)
             {
@@ -158,6 +165,13 @@ void PrintUsage()
     Console.WriteLine("  stop    [runId|latest]        Safe-stop: halts between stages.");
     Console.WriteLine("  replan  [runId|latest]        Invalidate stages whose inputs changed.");
     Console.WriteLine("  report  [runId|latest]        Run report with reliability metrics.");
+    Console.WriteLine();
+    Console.WriteLine("Taking the work:");
+    Console.WriteLine("  adopt   [runId|latest]        Preview what the run would copy here.");
+    Console.WriteLine("  adopt   [runId|latest] --apply   Copy it into this working tree.");
+    Console.WriteLine("      Refused unless implement, tests and policy all succeeded and");
+    Console.WriteLine("      this working tree is clean. Nothing is committed, so the undo");
+    Console.WriteLine("      is 'git restore .'. Rebuild afterwards to run the new code.");
     Console.WriteLine();
     Console.WriteLine("  Note: a requirement whose first word is a verb above must be");
     Console.WriteLine("  submitted with 'run', e.g. run \"Run reports nightly\".");
