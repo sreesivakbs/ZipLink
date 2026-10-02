@@ -17,7 +17,98 @@ public sealed class RunStore
     private const string AuditFileName = "audit.jsonl";
     private const string ArtifactsDirectoryName = "artifacts";
 
+    private const int IoAttempts = 12;
+
+    private static readonly TimeSpan IoBackoff = TimeSpan.FromMilliseconds(25);
+
     private readonly Lock _auditGate = new();
+
+    // ---- shared file access -------------------------------------------------
+    //
+    // Run state is written by the engine while something else - the Studio page polling
+    // every second or two, or a second CLI invocation - is reading it. The default
+    // File.ReadAllText/WriteAllText helpers open without sharing, so a reader locks out
+    // the writer and the save fails with "the process cannot access the file".
+    //
+    // Every access therefore opens with FileShare.ReadWrite | Delete, writes go through a
+    // temporary file that is moved into place so a reader never sees half a document, and
+    // anything that still collides is retried briefly rather than failing the run.
+
+    private static string ReadText(string path)
+    {
+        return Retry(() =>
+        {
+            using var stream = new FileStream(
+                path, FileMode.Open, FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+
+            return reader.ReadToEnd();
+        });
+    }
+
+    private static void WriteTextAtomic(string path, string contents)
+    {
+        var temporary = path + ".tmp";
+
+        Retry<object?>(() =>
+        {
+            using (var stream = new FileStream(
+                temporary, FileMode.Create, FileAccess.Write,
+                FileShare.ReadWrite | FileShare.Delete))
+            using (var writer = new StreamWriter(stream, Encoding.UTF8))
+            {
+                writer.Write(contents);
+            }
+
+            // Move is atomic on one volume: a reader sees either the old file or the new
+            // one, never a partially written document.
+            File.Move(temporary, path, overwrite: true);
+
+            return null;
+        });
+    }
+
+    private static void AppendText(string path, string contents)
+    {
+        Retry<object?>(() =>
+        {
+            using var stream = new FileStream(
+                path, FileMode.Append, FileAccess.Write,
+                FileShare.ReadWrite | FileShare.Delete);
+
+            using var writer = new StreamWriter(stream, Encoding.UTF8);
+
+            writer.Write(contents);
+
+            return null;
+        });
+    }
+
+    /// <summary>
+    /// Briefly retries an IO operation. Sharing flags remove most contention, but a file
+    /// being replaced at the exact moment another process opens it can still fail, and a
+    /// run should not die because of a timing coincidence.
+    /// </summary>
+    private static T Retry<T>(Func<T> operation)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return operation();
+            }
+            catch (IOException) when (attempt < IoAttempts)
+            {
+                Thread.Sleep(IoBackoff);
+            }
+            catch (UnauthorizedAccessException) when (attempt < IoAttempts)
+            {
+                Thread.Sleep(IoBackoff);
+            }
+        }
+    }
 
     public RunStore(string repositoryRoot)
     {
@@ -46,10 +137,9 @@ public sealed class RunStore
 
         Directory.CreateDirectory(directory);
 
-        File.WriteAllText(
+        WriteTextAtomic(
             Path.Combine(directory, RunFileName),
-            JsonSerializer.Serialize(state, JsonDefaults.Options),
-            Encoding.UTF8);
+            JsonSerializer.Serialize(state, JsonDefaults.Options));
     }
 
     public RunState? Load(string runId)
@@ -61,8 +151,7 @@ public sealed class RunStore
             return null;
         }
 
-        return JsonSerializer.Deserialize<RunState>(
-            File.ReadAllText(path, Encoding.UTF8), JsonDefaults.Options);
+        return JsonSerializer.Deserialize<RunState>(ReadText(path), JsonDefaults.Options);
     }
 
     public IReadOnlyList<string> ListRunIds()
@@ -100,8 +189,8 @@ public sealed class RunStore
 
         lock (_auditGate)
         {
-            File.AppendAllText(
-                Path.Combine(directory, AuditFileName), line + Environment.NewLine, Encoding.UTF8);
+            AppendText(
+                Path.Combine(directory, AuditFileName), line + Environment.NewLine);
         }
     }
 
@@ -116,7 +205,7 @@ public sealed class RunStore
 
         var events = new List<AuditEvent>();
 
-        foreach (var line in File.ReadAllLines(path, Encoding.UTF8))
+        foreach (var line in ReadText(path).Split('\n'))
         {
             if (string.IsNullOrWhiteSpace(line))
             {
@@ -143,10 +232,9 @@ public sealed class RunStore
 
         var fileName = $"{stageId}.json";
 
-        File.WriteAllText(
+        WriteTextAtomic(
             Path.Combine(directory, fileName),
-            JsonSerializer.Serialize(artifact, artifact.GetType(), JsonDefaults.Options),
-            Encoding.UTF8);
+            JsonSerializer.Serialize(artifact, artifact.GetType(), JsonDefaults.Options));
 
         return Path.Combine(ArtifactsDirectoryName, fileName);
     }
@@ -173,7 +261,7 @@ public sealed class RunStore
     {
         Directory.CreateDirectory(RunDirectory(runId));
 
-        File.WriteAllText(StopFilePath(runId), DateTime.UtcNow.ToString("O"), Encoding.UTF8);
+        WriteTextAtomic(StopFilePath(runId), DateTime.UtcNow.ToString("O"));
     }
 
     public bool IsStopRequested(string runId)
@@ -209,8 +297,7 @@ public sealed class RunStore
 
         foreach (var file in Directory.EnumerateFiles(directory, "*.json"))
         {
-            artifacts[Path.GetFileNameWithoutExtension(file)] =
-                File.ReadAllText(file, Encoding.UTF8);
+            artifacts[Path.GetFileNameWithoutExtension(file)] = ReadText(file);
         }
 
         return artifacts;
