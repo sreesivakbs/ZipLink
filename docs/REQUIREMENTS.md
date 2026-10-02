@@ -1,14 +1,14 @@
 # Project Requirements — Agentic Software Engineering System (URL Shortener)
 
-> **Handling:** The source document is marked **Classification: client-internal**.
+> **Handling:** The source document carries a **client-internal** classification.
 > This repository has no git remote configured. Do not add one, publish this repository,
 > or paste this document's contents into an external service without confirming that
-> the classification permits it.
+> the classification permits it. The client is deliberately not named anywhere here.
 
-**Source of truth.** This is a faithful transcription of the assignment brief,
-[`Assignment-Agentic-Software-Engineering-System.pdf`](Assignment-Agentic-Software-Engineering-System.pdf),
-kept in this folder. Treat this file as read-only requirements: do not edit it to reflect
-what has been built. Track progress, decisions and gaps in separate documents.
+**Source of truth.** This is a faithful transcription of the assignment brief. The brief
+itself is client-internal and is deliberately not kept in this repository, so this file is
+the requirements of record. Treat it as read-only: do not edit it to reflect what has been
+built. Track progress, decisions and gaps in separate documents.
 
 Timebox stated in the brief: **2–3 days**, using AI assistance (Copilot/Claude/etc.)
 while demonstrating engineering judgment.

@@ -97,8 +97,8 @@ shown to have any.
 - Identifier names are meaningful enough for lexical impact analysis to be a useful hint.
 - Scoring weights and thresholds throughout (impact: type 5 / method 4 / file 3; ambiguity
   High ≥ 4) are judgment, **not calibration**. No corpus was used.
-- `main` has no remote, and the assignment PDF is marked client-internal; nothing is
-  published anywhere.
+- `main` has no remote, and the client-internal assignment brief is deliberately not kept
+  in this repository; nothing is published anywhere.
 
 ## 7. Limitations
 

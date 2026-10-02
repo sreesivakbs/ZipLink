@@ -7,11 +7,13 @@ Read both of these before planning any work:
 - `PROJECT_BRIEF.md` (repo root) is how **we** are building it: the two pieces, the
   worked example of a run, the design principles, the phase roadmap with exit gates, and
   the stage state machine. This is the working document — read it first.
-- `docs/REQUIREMENTS.md` is **what we were asked for**: a read-only transcription of
-  `docs/Assignment-Agentic-Software-Engineering-System.pdf`. Never edit it to match what
-  was built. The source is marked **Classification: client-internal**, and this
-  repository has no git remote — do not add one, publish the repo, or send its contents
-  to an external service without confirming the classification permits it.
+- `docs/REQUIREMENTS.md` is **what we were asked for**: a read-only transcription of the
+  assignment brief. Never edit it to match what was built. The brief carries a
+  **client-internal** classification and is deliberately not kept in this repository, so
+  that transcription is the requirements of record. This repository has no git remote — do
+  not add one, publish the repo, or send its contents to an external service without
+  confirming the classification permits it. Do not name the client anywhere in this
+  repository, in code, docs, or commit messages.
 
 Where the two disagree, the assignment wins on *what* must be delivered and the brief
 wins on *how* we get there.
