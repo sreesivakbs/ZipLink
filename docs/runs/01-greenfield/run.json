@@ -1,15 +1,15 @@
 ﻿{
-  "RunId": "20261001-115136-82acb0",
+  "RunId": "20261002-024445-efe9be",
   "Requirement": "Build a URL shortener",
-  "CreatedAtUtc": "2026-10-01T11:51:36.5717069Z",
-  "Status": "Succeeded",
+  "CreatedAtUtc": "2026-10-02T02:44:45.9122597Z",
+  "Status": "Failed",
   "Stages": [
     {
       "Id": "requirements",
       "State": "Succeeded",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:51:36.6533563Z",
-      "CompletedAtUtc": "2026-10-01T11:51:36.6748377Z",
+      "StartedAtUtc": "2026-10-02T02:44:45.9898998Z",
+      "CompletedAtUtc": "2026-10-02T02:44:46.0076314Z",
       "Summary": "Risk Low, 0 ambiguity(ies) detected.",
       "ArtifactFile": "artifacts\\requirements.json",
       "InputHash": "F1B7AF8367C3A3E3"
@@ -18,9 +18,9 @@
       "Id": "impact",
       "State": "Succeeded",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:51:36.6888955Z",
-      "CompletedAtUtc": "2026-10-01T11:51:36.8237455Z",
-      "Summary": "10 file(s) implicated, confidence High.",
+      "StartedAtUtc": "2026-10-02T02:44:46.0224912Z",
+      "CompletedAtUtc": "2026-10-02T02:44:46.1003475Z",
+      "Summary": "14 file(s) implicated, confidence High.",
       "ArtifactFile": "artifacts\\impact.json",
       "InputHash": "01F71C741DE0E3EA"
     },
@@ -28,55 +28,58 @@
       "Id": "design",
       "State": "Succeeded",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:51:36.8278628Z",
-      "CompletedAtUtc": "2026-10-01T11:51:36.8284224Z",
-      "Summary": "STUB: No design agent yet; a human reviews the impact report instead.",
+      "StartedAtUtc": "2026-10-02T02:44:46.1223174Z",
+      "CompletedAtUtc": "2026-10-02T02:45:21.5041573Z",
+      "Summary": "9 step(s) proposed across 8 file(s); 6 open question(s).",
       "ArtifactFile": "artifacts\\design.json",
-      "InputHash": "78CCDEA611C0EA35",
+      "InputHash": "4F9769B0AA8BE4FB",
       "DecidedBy": "sreed",
-      "DecidedAtUtc": "2026-10-01T11:51:51.5946848Z"
+      "DecidedAtUtc": "2026-10-02T02:45:30.6640036Z"
     },
     {
       "Id": "implement",
       "State": "Succeeded",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:51:51.6472807Z",
-      "CompletedAtUtc": "2026-10-01T11:51:51.6537178Z",
-      "Summary": "STUB: No implementation agent yet; no code was written.",
+      "StartedAtUtc": "2026-10-02T02:45:30.698688Z",
+      "CompletedAtUtc": "2026-10-02T02:47:44.5642583Z",
+      "Summary": "8 file(s) written and compiling after 1 attempt(s).",
       "ArtifactFile": "artifacts\\implement.json",
-      "InputHash": "3A49D676C907C594"
+      "InputHash": "F90E93639F38EDF0"
     },
     {
       "Id": "tests",
-      "State": "Succeeded",
-      "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:51:51.6970384Z",
-      "CompletedAtUtc": "2026-10-01T11:51:55.3631345Z",
-      "Summary": "Passed!  - Failed:     0, Passed:   116, Skipped:     0, Total:   116, Duration: 1 s - ZipLink.Tests.dll (net10.0)",
+      "State": "Failed",
+      "Attempts": 3,
+      "StartedAtUtc": "2026-10-02T02:47:44.5848159Z",
+      "CompletedAtUtc": "2026-10-02T02:47:55.151327Z",
+      "Summary": "Failed!  - Failed:     1, Passed:   214, Skipped:     0, Total:   215, Duration: 563 ms - ZipLink.Tests.dll (net10.0)",
       "ArtifactFile": "artifacts\\tests.json",
-      "InputHash": "14C19397F7BD92FF"
+      "InputHash": "3175549B026C22B2"
     },
     {
       "Id": "docs",
-      "State": "Succeeded",
+      "State": "RolledBack",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:51:51.7398318Z",
-      "CompletedAtUtc": "2026-10-01T11:51:51.7401603Z",
-      "Summary": "STUB: No documentation agent yet; nothing was generated.",
-      "ArtifactFile": "artifacts\\docs.json",
-      "InputHash": "3CCAA77054CF6F92"
+      "StartedAtUtc": "2026-10-02T02:47:44.597704Z",
+      "CompletedAtUtc": "2026-10-02T02:47:56.4505117Z",
+      "Summary": "6 release note(s); 4 documentation gap(s) flagged.",
+      "InputHash": "D63C524EF200E643"
+    },
+    {
+      "Id": "policy",
+      "State": "Failed",
+      "Attempts": 3,
+      "StartedAtUtc": "2026-10-02T02:47:44.6095297Z",
+      "CompletedAtUtc": "2026-10-02T02:47:44.9770913Z",
+      "Summary": "1 policy violation(s) across 60 file(s): [no-unapproved-dependencies] tests/ZipLink.Tests/ZipLink.Tests.csproj:12 - \u0027Microsoft.AspNetCore.Mvc.Testing\u0027 is not on the approved dependency list. Adding a package is a change-control decision a human must make.",
+      "ArtifactFile": "artifacts\\policy.json",
+      "InputHash": "C1EF47E3D3CFE4C4"
     },
     {
       "Id": "release",
-      "State": "Succeeded",
-      "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:51:55.3950914Z",
-      "CompletedAtUtc": "2026-10-01T11:51:55.3960418Z",
-      "Summary": "STUB: Release readiness summary pending final human approval.",
-      "ArtifactFile": "artifacts\\release.json",
-      "InputHash": "DD5A2346FECA17E0",
-      "DecidedBy": "sreed",
-      "DecidedAtUtc": "2026-10-01T11:51:57.7536541Z"
+      "State": "Pending",
+      "Attempts": 0
     }
-  ]
+  ],
+  "FailureReason": "Stage \u0027policy\u0027 failed: 1 policy violation(s) across 60 file(s): [no-unapproved-dependencies] tests/ZipLink.Tests/ZipLink.Tests.csproj:12 - \u0027Microsoft.AspNetCore.Mvc.Testing\u0027 is not on the approved dependency list. Adding a package is a change-control decision a human must make."
 }

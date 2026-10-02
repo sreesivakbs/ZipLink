@@ -1,251 +1,172 @@
 # Scenarios
 
-Three required scenarios — greenfield, brownfield, ambiguous — plus a fourth run that
-carries a requirement all the way to tested code. Each executed through the
-orchestrator and recorded. The run folders under [`runs/`](runs/) are the actual output,
-copied unedited from `.ziplink/runs/`: `run.json`, the append-only `audit.jsonl`, and one
-artifact per stage.
+The three required scenarios — greenfield, brownfield, ambiguous — each executed through
+the orchestrator **with real agents enabled**, and recorded. The folders under
+[`runs/`](runs/) are the actual output, copied unedited: `run.json`, the append-only
+`audit.jsonl`, one artifact per stage, and the diff where code was written.
 
 Reproduce any of them with the commands in [SETUP.md](SETUP.md).
 
-| # | Scenario | Requirement | Outcome | Run |
-|---|---|---|---|---|
-| 1 | Greenfield | "Build a URL shortener" | Completed, 7/7 stages, 2 approvals | `20261001-115136-82acb0` |
-| 2 | Brownfield | "Add custom short names and link expiration" | Blocked at `design` approval | `20261001-115259-1cea9a` |
-| 3 | Ambiguous | "Make it handle more traffic" | **Blocked at `requirements`** — clarification required | `20261001-115142-c4d822` |
+| # | Scenario | Requirement | Outcome |
+|---|---|---|---|
+| 1 | Greenfield | "Build a URL shortener" | **Failed at the policy gate and the test stage** — guardrails bit |
+| 2 | Brownfield | "Add custom short names and link expiration" | Completed: 9 files written, compiling, tests green |
+| 3 | Ambiguous | "Make it handle more traffic" | Blocked for clarification, then proceeded on approval |
+
+Two of three did not finish cleanly. That is the point of the exercise and the runs are
+published as they happened: a system whose guardrails never fire has not been shown to
+have any.
 
 ---
 
 ## 1. Greenfield — "Build a URL shortener"
 
-**Evidence:** [`runs/01-greenfield/`](runs/01-greenfield/) · 27 audit events
-
-### Decomposition
-
-The requirement analyzer found **no ambiguity** (risk `Low`, score 0), so the run passed
-its own clarification gate and the pipeline decomposed the work along the graph:
-requirements → impact → design → implement → tests ∥ docs → release.
+**Evidence:** [`runs/01-greenfield/`](runs/01-greenfield/) · 30 audit events ·
+[`workspace.diff`](runs/01-greenfield/workspace.diff)
 
 ### Orchestration
 
 ```
-  [x] requirements  Succeeded         after:-                   0.02s
-  [x] impact        Succeeded         after:requirements        0.17s
-  [x] design        Succeeded         after:impact              0.00s   ← approved by sreed
-  [x] implement     Succeeded         after:design              0.00s
-  [x] tests         Succeeded         after:implement           4.23s
-  [x] docs          Succeeded         after:implement           0.00s
-  [x] release       Succeeded         after:tests+docs          0.00s   ← approved by sreed
+  [x] requirements  Succeeded     0.02s   Risk Low, 0 ambiguities
+  [x] impact        Succeeded     0.08s   14 files implicated, confidence High
+  [x] design        Succeeded    35.38s   9 steps across 8 files      <- approved by a human
+  [x] implement     Succeeded   133.87s   8 files written, compiling on attempt 1
+  [!] tests         Failed       10.57s   Failed! 1 failed, 214 passed of 215
+  [-] docs          RolledBack   11.85s   6 release notes, 4 gaps
+  [!] policy        Failed        0.37s   1 violation
+  [ ] release       Pending                                            never started
 ```
 
-The audit log shows `StageReady tests` and `StageReady docs` in the same tick, `docs`
-completing while `tests` was still running, and `release` becoming ready only after both
-— parallelism and synchronization, not a sequence.
+### Three guardrails fired at once
 
-The run stopped twice and waited for a human, exiting with code 2 each time. It advanced
-only when `approve` was issued.
+**The policy gate caught an unapproved dependency.** The agent added
+`Microsoft.AspNetCore.Mvc.Testing` to the test project so it could write HTTP-level
+integration tests — a *reasonable* engineering instinct, and precisely the gap
+[TESTING.md](TESTING.md) records as our largest. It is still a change-control decision a
+human makes, and the gate stopped it:
 
-### Validation
+> `[no-unapproved-dependencies] tests/ZipLink.Tests/ZipLink.Tests.csproj:12 -
+> 'Microsoft.AspNetCore.Mvc.Testing' is not on the approved dependency list.`
 
-`tests` ran the real suite: **`Passed! - Failed: 0, Passed: 116`**. A deterministic check
-decided the outcome; no agent asserted its own correctness.
+**The test stage failed** on a deterministic check: 1 of 215 tests red. No agent opinion
+was consulted and none could have overridden it.
 
-```
-Stage success rate : 100% (7/7 succeeded)
-Retries            : 0        Rolled back : 0
-End-to-end latency : 21.22s
-Time in stages     :  3.83s
-Waiting on humans  : 17.14s
-```
-
-81% of the elapsed time was waiting for approvals. That separation is the point of
-reporting the three numbers rather than one.
+**Rollback undid the work of the failed step.** `docs` succeeded in the same tick and was
+marked `RolledBack`; `release` never started.
 
 ### What this does and does not show
 
-It shows the full lifecycle under governance, with real validation at the end.
+It shows the governance machinery working on real agent output rather than on fixtures:
+change control, deterministic validation, tick-scoped rollback, and a run that stops
+rather than asking a human to approve something broken.
 
-**It does not produce a URL shortener.** This run predates the implementation agent, so
-`implement` is a stub that records exactly that. The working shortener in `src/` was
-hand-built as the Phase 1 baseline and is the reference output this scenario would be
-measured against. Reporting this run as "greenfield delivery" would be false; it is
-greenfield *planning, decomposition, governance and validation*. Scenario 4 shows the
-same pipeline actually producing code.
+It does **not** show a working URL shortener built by agents. The run failed. The
+shortener in `src/` remains the hand-built Phase 1 baseline.
 
 ---
 
 ## 2. Brownfield — "Add custom short names and link expiration"
 
-**Evidence:** [`runs/02-brownfield/`](runs/02-brownfield/) · 11 audit events
+**Evidence:** [`runs/02-brownfield/`](runs/02-brownfield/) · 30 audit events ·
+[`workspace.diff`](runs/02-brownfield/workspace.diff)
 
-### Decomposition
+The assignment's named brownfield scenario, carried end to end.
 
-Risk `Medium`, one ambiguity: `expiration` is a time-dependent concept with no duration
-given. The run was allowed to proceed — a missing default is a question worth asking, not
-a reason to stop — but the question and the assumption were recorded:
+```
+  [x] requirements  Succeeded     0.02s   Risk Medium, 1 ambiguity (no duration given)
+  [x] impact        Succeeded     0.08s   46 files implicated, confidence Medium
+  [x] design        Succeeded    31.74s   10 steps across 9 files     <- approved by a human
+  [x] implement     Succeeded   182.90s   9 files written, compiling on attempt 2
+  [x] tests         Succeeded     4.80s   Passed! 194 tests, in the agent's workspace
+  [x] docs          Succeeded    16.68s   6 release notes, 7 documentation gaps
+  [x] policy        Succeeded     0.14s   60 files scanned, clean
+  [x] release       Succeeded     0.00s                                <- approved by a human
+```
 
-> What duration applies to 'expiration', and is it configurable?
-> What should happen to records that have already passed the 'expiration' point:
-> rejected, deleted, or retained for reporting?
+### What the agent produced
 
-### Codebase reasoning
+570 insertions across 9 files: `ExpiresAt` on `ShortUrl`, an `IClock` abstraction with a
+`SystemClock` and a `FakeClock` for deterministic tests, alias validation and reservation
+in the service, repository support for both, API wiring, and tests.
 
-This is the scenario that exercises impact analysis. 31 files implicated across 32
-scanned, confidence `Medium`:
+**"compiling on attempt 2" is the interesting number.** The first attempt did not compile;
+the agent was given its own compiler errors and fixed them. That loop is why the stage
+hands on code that builds rather than code that looks plausible.
 
-| Rank | File | Score |
+### The failure this scenario exposed
+
+The run completed, every gate passed, and a human approved a release. The change was
+still not safe to take.
+
+Comparing the agent's test file against the baseline:
+
+| | baseline | agent's version |
 |---|---|---|
-| 1 | `src/ZipLink.Core/Interfaces/IShortUrlRepository.cs` | 12.8 |
-| 2 | `src/ZipLink.Core/Services/UrlShorteningService.cs` | 12.8 |
-| 3 | `src/ZipLink.Infrastructure/Repositories/InMemoryShortUrlRepository.cs` | 12.8 |
-| 4 | `src/ZipLink.Core/Models/ShortUrl.cs` | 8.8 |
-| 5 | `tests/ZipLink.Tests/UrlShorteningServiceTests.cs` *(test)* | 8.52 |
-| 7 | `src/ZipLink.Api/Program.cs` | 5.0 |
+| Test methods | 7 | 19 |
+| `InlineData` cases | **23** | **8** |
+| `169.254.169.254` covered | yes | **no** |
 
-That is the correct answer: the model, the repository contract, both implementations, the
-API surface, and the tests that will need updating — with production code ranked above
-the tests that cover it.
+It added twelve methods for aliases and expiration and **silently deleted the
+parameterised cases covering private and internal addresses** — fifteen assertions of
+security behaviour, including the cloud-metadata endpoint. The suite still reported green,
+because deleted tests do not fail.
 
-The most useful line in the report is about what it *could not* find:
+Nothing caught it. The test stage saw 194 passing. The policy gate was only looking for
+secrets and dependencies. It was found by reading the diff.
 
-> No code anywhere matches 'custom', 'expiration'. Those concepts are probably not
-> modelled yet, so the files needed to implement them cannot be identified lexically and
-> are likely missing from the ranking.
+**The fix is committed**: `TestCoverageGuard` now fails the policy gate when a change
+removes more test cases than it adds. Checked against this very diff — 24 removed, 21
+added, net −3 — it would have failed this run. Tests may be rewritten; coverage may not
+shrink.
 
-Both features are genuinely absent from the codebase, so the analysis says so and caps
-overall confidence at `Medium` rather than presenting a confident but incomplete list.
-It also discloses that `link` appears in more than half the files and was down-weighted.
-
-### Orchestration and validation
-
-The run reached `design` and **stopped** for approval, exit code 2. `implement`, `tests`,
-`docs` and `release` were never started. Validation criteria were fixed in advance by the
-requirements stage, including:
-
-> Behaviour is covered by tests for both the elapsed and the not-yet-elapsed case.
-
-### What this does and does not show
-
-It shows real brownfield reasoning over an existing codebase and a governance stop before
-any change. It does not make the change: the run stopped at the gate, and it predates the
-implementation agent. Scenario 4 carries a requirement all the way to tested code.
+The run is published unchanged, with the regression in it, because the finding is worth
+more than a tidy result.
 
 ---
 
 ## 3. Ambiguous — "Make it handle more traffic"
 
-**Evidence:** [`runs/03-ambiguous/`](runs/03-ambiguous/) · 5 audit events
+**Evidence:** [`runs/03-ambiguous/`](runs/03-ambiguous/) · 20 audit events
 
-### The gate fires
+### The gate fires first
 
-Risk `High` (score 4), two ambiguities, and the run **never reached impact analysis**:
+Risk `High` (score 4). The run stopped at `requirements` and **never reached impact
+analysis**: `traffic` names a scalability goal with no property in scope, and `more` asks
+for a relative change with no baseline or target.
 
-```
-  [?] requirements  AwaitingApproval  after:-                   0.02s
-       GATE: Risk is High (score 4). Implementing this without clarification would
-             mean guessing at the requester's intent.
-  [ ] impact        Pending           after:requirements            -
-  [ ] design        Pending           after:impact                  -
-  ...
-```
+### Then the human chooses, and the system proceeds
 
-Two rules fired:
+On approval the run continued, and the design agent proposed *options* rather than
+assuming one — which is what the brief asks of this scenario:
 
-- `traffic` names a **scalability** goal without saying which property is in scope or how
-  it will be verified.
-- `more` asks for a relative change **without stating a baseline or a target**, so
-  completion cannot be judged.
+> …make throughput measurable first and then apply one targeted, low-risk improvement on
+> the hot path, rather than a speculative re-architecture…
 
-### Questions asked
+with the decisions a person has to make stated as questions:
 
-> Which aspect of scalability is in scope: target requests per second, concurrent users,
-> expected data growth, horizontal or vertical scaling, acceptable cost ceiling?
+> Is the target to be met by a single instance (vertical) or by running multiple instances
+> (horizontal)? **Horizontal scaling makes in-memory caching the wrong choice** and shifts
+> the work to statelessness, distributed cache and ID-generation collision safety.
 >
-> How will 'traffic' be measured or demonstrated once implemented?
->
-> 'more' compared to what? Please state the current value and the target value.
+> What is the read/write mix? If the workload is write-heavy rather than read-heavy,
+> caching the lookup path yields nothing and the bottleneck is the store's write path.
 
-### Assumptions recorded
+That is the scenario's substance: ambiguity detected deterministically, escalated to a
+human, and then answered with options and trade-offs rather than a guess.
 
-> Current behaviour is the baseline for 'traffic'; no target value was supplied.
-> The comparison is against the behaviour currently in the repository.
+### Where it stopped, and why
 
-### Acceptance criteria — marked provisional
+`implement` failed after three bounded attempts — the retry policy working — with
+`the input does not contain any JSON tokens`.
 
-> **(provisional — cannot be finalised until the questions above are answered)**
-> The agreed scalability target is stated as a number and verified by a repeatable check.
+The cause was ours, not the agent's: an eight-file change exceeded the 16k output limit,
+so each answer was truncated mid-JSON and surfaced downstream as a parse error. **Fixed**:
+the limit is now 64k, requests are streamed to stay clear of HTTP timeouts, and truncation
+is reported as truncation. The brownfield scenario above ran after that fix and completed.
 
-The system refuses to pretend it can finalise acceptance criteria for a requirement it
-cannot yet interpret.
-
-### Validation
-
-The *correct* behaviour here is to produce nothing but questions. Exit code 2 and five
-audit events — `RunStarted`, `StageReady`, `StageStarted`, `StageBlocked`,
-`RunAwaitingApproval` — are the whole run. A human now chooses a direction (caching,
-async click tracking, read replicas); `approve` resumes from exactly this point.
-
-### What this does and does not show
-
-It shows the ambiguity gate stopping a pipeline before any work is done on a guess.
-
-It does **not** propose the options itself. The brief envisages the requirements agent
-suggesting e.g. Redis or Kafka; our deterministic analyzer names the *dimensions* that
-need deciding, not candidate technologies. Proposing solutions requires judgment about
-this specific system, which is Phase 3 agent work.
-
----
-
----
-
-## 4. End to end with agents — "Block private and internal IP addresses when shortening a URL"
-
-**Evidence:** [`runs/05-implement-agent/`](runs/05-implement-agent/) including
-[`workspace.diff`](runs/05-implement-agent/workspace.diff) · 27 audit events
-
-Not one of the three required scenarios, but the one that closes the loop: a requirement
-becoming code that passes real tests, which is the project brief's Phase 3 exit gate.
-
-```
-  [x] requirements  Succeeded    0.02s   Risk Low, 0 ambiguity(ies)
-  [x] impact        Succeeded    0.10s   12 file(s) implicated
-  [x] design        Succeeded   44.28s   9 steps across 3 files   <- approved by a human
-  [x] implement     Succeeded   66.97s   3 file(s) written and compiling after 1 attempt
-  [x] tests         Succeeded    4.59s   Passed! 152 tests (in the agent's workspace)
-  [x] docs          Succeeded    0.01s   STUB
-  [x] release       Succeeded    0.00s                            <- approved by a human
-```
-
-The suite reports **152** rather than this repository's 146 because the agent added six
-of its own tests. It ran in the detached worktree, so it judged the agent's code.
-
-### What the agent produced
-
-A new `PrivateAddressGuard` in `ZipLink.Core`, three lines of wiring in
-`UrlShorteningService`, and parameterised tests — 269 insertions across the three files
-the approved design named, and no others.
-
-The guard refuses loopback, RFC1918, link-local, unique-local and CGNAT ranges, IPv6
-literals including bracketed and zone-indexed forms, and internal-looking hostnames. It
-performs **no DNS resolution**, so it stays deterministic.
-
-Two details worth noting, because they are the difference between generated code and
-*considered* code:
-
-- It blocks `http://169.254.169.254/latest/meta-data` — the cloud metadata endpoint, and
-  the exact gap recorded against this repository since the first architecture review.
-- Its "should be allowed" cases test **range boundaries**: `172.32.0.1` and
-  `100.128.0.1` sit just outside the private blocks, so the test would catch an
-  off-by-one in the mask arithmetic.
-
-The design stage had already flagged, unprompted, that alternative IP encodings
-(`http://2130706433/`, `http://0x7f.0.0.1/`) can bypass this kind of guard — a real
-limitation of the change, surfaced before it was written rather than discovered later.
-
-### What this does not show
-
-The change was **not merged**. It sits in the worktree for a human to review, which is
-the designed behaviour — no agent output reaches `main` without a person applying it.
+This run is published as it happened rather than re-run, because it is the clearest record
+of bounded retries and a clean failure — and of a limit discovered by running the thing
+rather than by reasoning about it.
 
 ---
 
@@ -255,15 +176,20 @@ the designed behaviour — no agent output reaches `main` without a person apply
 |---|---|
 | Requirement understanding and ambiguity detection | Yes — scenario 3 |
 | Task decomposition with dependencies | Yes — all three |
-| Codebase reasoning over existing code | Yes — scenario 2 |
+| Codebase reasoning over existing code | Yes — scenario 2, 46 files implicated |
 | Non-linear, stateful orchestration with gates | Yes — all three |
-| Parallel execution with synchronization | Yes — scenario 1 |
-| Deterministic validation | Yes — scenario 1, real `dotnet test` |
+| Parallel execution with synchronization | Yes — tests ∥ docs ∥ policy, joining at release |
+| Human approval checkpoints | Yes — all three stopped and waited |
+| Code generation | Yes — scenarios 1 and 2 |
+| Deterministic validation | Yes — real `dotnet test` decided scenarios 1 and 2 |
+| Bounded retries | Yes — scenario 3 (3 attempts), scenario 2 (recovered on 2) |
+| Rollback | Yes — scenario 1, `docs` rolled back |
+| Policy guardrails | Yes — scenario 1, unapproved dependency blocked |
 | Audit trail and metrics | Yes — all three |
-| Bounded retries, rollback, safe-stop, re-planning | Implemented and tested; not exercised by these runs |
-| **Code generation** | **Yes** — scenario 4, verified by the real test suite |
-| **Options proposed for an ambiguous requirement** | **No** — dimensions named, not solutions |
+| Safe-stop, re-planning | Implemented and tested; not exercised by these runs |
+| **Agents merging their own work** | **No, by design** — a human applies it or does not |
+| **Measurable before/after for the ambiguous scenario** | **No** — it stopped at implementation |
 
-The remaining "No" row is Phase 3 agent work and is not claimed anywhere in this
-repository. Nothing an agent writes is merged: it stays in an isolated worktree for a
-human to review.
+Nothing an agent wrote has reached `main` except one change a human read and chose to
+take: the private-address guard in
+[`runs/05-implement-agent/`](runs/05-implement-agent/).

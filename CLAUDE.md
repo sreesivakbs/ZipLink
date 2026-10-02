@@ -56,7 +56,7 @@ Built so far:
 - **`implement` writes code** into a detached git worktree (no branches created), limited
   to files the approved design named, compiles it with feedback, and the tests stage runs
   the real suite in that workspace. Rollback is `git reset --hard`. Nothing merges.
-- 196 tests, all offline — the agent is tested through a fake `ILanguageModel`.
+- 205 tests, all offline — the agent is tested through a fake `ILanguageModel`.
 
 Open decisions, not failures — the assignment requires none of these:
 - **Routes do not match the brief.** Built: `POST /api/urls`, `GET /{code}`,

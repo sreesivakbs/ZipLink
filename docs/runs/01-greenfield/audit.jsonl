@@ -1,27 +1,30 @@
-﻿{"TimestampUtc":"2026-10-01T11:51:36.6375061Z","RunId":"20261001-115136-82acb0","Event":"RunStarted","Actor":"system","Detail":"Build a URL shortener"}
-{"TimestampUtc":"2026-10-01T11:51:36.6472282Z","RunId":"20261001-115136-82acb0","Stage":"requirements","Event":"StageReady","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:36.6534408Z","RunId":"20261001-115136-82acb0","Stage":"requirements","Event":"StageStarted","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:36.6832596Z","RunId":"20261001-115136-82acb0","Stage":"requirements","Event":"StageSucceeded","Actor":"system","Detail":"Risk Low, 0 ambiguity(ies) detected."}
-{"TimestampUtc":"2026-10-01T11:51:36.6863794Z","RunId":"20261001-115136-82acb0","Stage":"impact","Event":"StageReady","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:36.6888963Z","RunId":"20261001-115136-82acb0","Stage":"impact","Event":"StageStarted","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:36.8262103Z","RunId":"20261001-115136-82acb0","Stage":"impact","Event":"StageSucceeded","Actor":"system","Detail":"10 file(s) implicated, confidence High."}
-{"TimestampUtc":"2026-10-01T11:51:36.8270601Z","RunId":"20261001-115136-82acb0","Stage":"design","Event":"StageReady","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:36.8278634Z","RunId":"20261001-115136-82acb0","Stage":"design","Event":"StageStarted","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:36.8299667Z","RunId":"20261001-115136-82acb0","Stage":"design","Event":"StageAwaitingApproval","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:36.8578831Z","RunId":"20261001-115136-82acb0","Event":"RunAwaitingApproval","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:51.6037904Z","RunId":"20261001-115136-82acb0","Stage":"design","Event":"StageApproved","Actor":"sreed"}
-{"TimestampUtc":"2026-10-01T11:51:51.610833Z","RunId":"20261001-115136-82acb0","Stage":"implement","Event":"StageReady","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:51.6472823Z","RunId":"20261001-115136-82acb0","Stage":"implement","Event":"StageStarted","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:51.671252Z","RunId":"20261001-115136-82acb0","Stage":"implement","Event":"StageSucceeded","Actor":"system","Detail":"STUB: No implementation agent yet; no code was written."}
-{"TimestampUtc":"2026-10-01T11:51:51.6726947Z","RunId":"20261001-115136-82acb0","Stage":"tests","Event":"StageReady","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:51.673125Z","RunId":"20261001-115136-82acb0","Stage":"docs","Event":"StageReady","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:51.6970398Z","RunId":"20261001-115136-82acb0","Stage":"tests","Event":"StageStarted","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:51.7398325Z","RunId":"20261001-115136-82acb0","Stage":"docs","Event":"StageStarted","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:51.7407096Z","RunId":"20261001-115136-82acb0","Stage":"docs","Event":"StageSucceeded","Actor":"system","Detail":"STUB: No documentation agent yet; nothing was generated."}
-{"TimestampUtc":"2026-10-01T11:51:55.3725305Z","RunId":"20261001-115136-82acb0","Stage":"tests","Event":"StageSucceeded","Actor":"system","Detail":"Passed!  - Failed:     0, Passed:   116, Skipped:     0, Total:   116, Duration: 1 s - ZipLink.Tests.dll (net10.0)"}
-{"TimestampUtc":"2026-10-01T11:51:55.3749476Z","RunId":"20261001-115136-82acb0","Stage":"release","Event":"StageReady","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:55.3950927Z","RunId":"20261001-115136-82acb0","Stage":"release","Event":"StageStarted","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:55.3974272Z","RunId":"20261001-115136-82acb0","Stage":"release","Event":"StageAwaitingApproval","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:55.4281569Z","RunId":"20261001-115136-82acb0","Event":"RunAwaitingApproval","Actor":"system"}
-{"TimestampUtc":"2026-10-01T11:51:57.7603058Z","RunId":"20261001-115136-82acb0","Stage":"release","Event":"StageApproved","Actor":"sreed"}
-{"TimestampUtc":"2026-10-01T11:51:57.7884255Z","RunId":"20261001-115136-82acb0","Event":"RunSucceeded","Actor":"system"}
+﻿{"TimestampUtc":"2026-10-02T02:44:45.9600503Z","RunId":"20261002-024445-efe9be","Event":"RunStarted","Actor":"system","Detail":"Build a URL shortener"}
+{"TimestampUtc":"2026-10-02T02:44:45.9673212Z","RunId":"20261002-024445-efe9be","Stage":"requirements","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:44:45.9899512Z","RunId":"20261002-024445-efe9be","Stage":"requirements","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:44:46.0140347Z","RunId":"20261002-024445-efe9be","Stage":"requirements","Event":"StageSucceeded","Actor":"system","Detail":"Risk Low, 0 ambiguity(ies) detected."}
+{"TimestampUtc":"2026-10-02T02:44:46.0154748Z","RunId":"20261002-024445-efe9be","Stage":"impact","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:44:46.0224924Z","RunId":"20261002-024445-efe9be","Stage":"impact","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:44:46.101882Z","RunId":"20261002-024445-efe9be","Stage":"impact","Event":"StageSucceeded","Actor":"system","Detail":"14 file(s) implicated, confidence High."}
+{"TimestampUtc":"2026-10-02T02:44:46.1024508Z","RunId":"20261002-024445-efe9be","Stage":"design","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:44:46.1223181Z","RunId":"20261002-024445-efe9be","Stage":"design","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:45:21.5069402Z","RunId":"20261002-024445-efe9be","Stage":"design","Event":"StageAwaitingApproval","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:45:21.5442127Z","RunId":"20261002-024445-efe9be","Event":"RunAwaitingApproval","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:45:30.6705163Z","RunId":"20261002-024445-efe9be","Stage":"design","Event":"StageApproved","Actor":"sreed"}
+{"TimestampUtc":"2026-10-02T02:45:30.6784027Z","RunId":"20261002-024445-efe9be","Stage":"implement","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:45:30.6986892Z","RunId":"20261002-024445-efe9be","Stage":"implement","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:47:44.5716846Z","RunId":"20261002-024445-efe9be","Stage":"implement","Event":"StageSucceeded","Actor":"system","Detail":"8 file(s) written and compiling after 1 attempt(s)."}
+{"TimestampUtc":"2026-10-02T02:47:44.573094Z","RunId":"20261002-024445-efe9be","Stage":"tests","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:47:44.5734314Z","RunId":"20261002-024445-efe9be","Stage":"docs","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:47:44.5738652Z","RunId":"20261002-024445-efe9be","Stage":"policy","Event":"StageReady","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:47:44.5848172Z","RunId":"20261002-024445-efe9be","Stage":"tests","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:47:44.5977055Z","RunId":"20261002-024445-efe9be","Stage":"docs","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:47:44.6095312Z","RunId":"20261002-024445-efe9be","Stage":"policy","Event":"StageStarted","Actor":"system"}
+{"TimestampUtc":"2026-10-02T02:47:44.7757682Z","RunId":"20261002-024445-efe9be","Stage":"policy","Event":"StageRetrying","Actor":"system","Detail":"attempt 1 of 3 failed: 1 policy violation(s) across 60 file(s): [no-unapproved-dependencies] tests/ZipLink.Tests/ZipLink.Tests.csproj:12 - \u0027Microsoft.AspNetCore.Mvc.Testing\u0027 is not on the approved dependency list. Adding a package is a change-control decision a human must make."}
+{"TimestampUtc":"2026-10-02T02:47:44.8703061Z","RunId":"20261002-024445-efe9be","Stage":"policy","Event":"StageRetrying","Actor":"system","Detail":"attempt 2 of 3 failed: 1 policy violation(s) across 60 file(s): [no-unapproved-dependencies] tests/ZipLink.Tests/ZipLink.Tests.csproj:12 - \u0027Microsoft.AspNetCore.Mvc.Testing\u0027 is not on the approved dependency list. Adding a package is a change-control decision a human must make."}
+{"TimestampUtc":"2026-10-02T02:47:44.9810871Z","RunId":"20261002-024445-efe9be","Stage":"policy","Event":"StageFailed","Actor":"system","Detail":"1 policy violation(s) across 60 file(s): [no-unapproved-dependencies] tests/ZipLink.Tests/ZipLink.Tests.csproj:12 - \u0027Microsoft.AspNetCore.Mvc.Testing\u0027 is not on the approved dependency list. Adding a package is a change-control decision a human must make."}
+{"TimestampUtc":"2026-10-02T02:47:49.9888106Z","RunId":"20261002-024445-efe9be","Stage":"tests","Event":"StageRetrying","Actor":"system","Detail":"attempt 1 of 3 failed: Failed!  - Failed:     1, Passed:   214, Skipped:     0, Total:   215, Duration: 957 ms - ZipLink.Tests.dll (net10.0)"}
+{"TimestampUtc":"2026-10-02T02:47:52.5901363Z","RunId":"20261002-024445-efe9be","Stage":"tests","Event":"StageRetrying","Actor":"system","Detail":"attempt 2 of 3 failed: Failed!  - Failed:     1, Passed:   214, Skipped:     0, Total:   215, Duration: 621 ms - ZipLink.Tests.dll (net10.0)"}
+{"TimestampUtc":"2026-10-02T02:47:55.1539182Z","RunId":"20261002-024445-efe9be","Stage":"tests","Event":"StageFailed","Actor":"system","Detail":"Failed!  - Failed:     1, Passed:   214, Skipped:     0, Total:   215, Duration: 563 ms - ZipLink.Tests.dll (net10.0)"}
+{"TimestampUtc":"2026-10-02T02:47:56.4526886Z","RunId":"20261002-024445-efe9be","Stage":"docs","Event":"StageSucceeded","Actor":"system","Detail":"6 release note(s); 4 documentation gap(s) flagged."}
+{"TimestampUtc":"2026-10-02T02:47:56.4557306Z","RunId":"20261002-024445-efe9be","Stage":"docs","Event":"StageRolledBack","Actor":"system","Detail":"a stage in the same step failed"}
+{"TimestampUtc":"2026-10-02T02:47:56.4850189Z","RunId":"20261002-024445-efe9be","Event":"RunFailed","Actor":"system","Detail":"Stage \u0027policy\u0027 failed: 1 policy violation(s) across 60 file(s): [no-unapproved-dependencies] tests/ZipLink.Tests/ZipLink.Tests.csproj:12 - \u0027Microsoft.AspNetCore.Mvc.Testing\u0027 is not on the approved dependency list. Adding a package is a change-control decision a human must make."}

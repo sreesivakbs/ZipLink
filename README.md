@@ -12,7 +12,7 @@ The orchestrator is the focus. The shortener is the sample workload it analyses.
 
 ```bash
 dotnet build ZipLink.slnx
-dotnet test  ZipLink.slnx        # 196 tests, ~3s
+dotnet test  ZipLink.slnx        # 205 tests, ~3s
 
 # A requirement too vague to act on — stops and asks, exit code 2
 dotnet run --project src/ZipLink.Agentic -- run "Make it handle more traffic"
@@ -30,14 +30,16 @@ dotnet run --project src/ZipLink.Agentic -- run "Make it handle more traffic"
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, the stage graph, control flow, gates, state and audit, key decisions |
 | [docs/SCENARIOS.md](docs/SCENARIOS.md) | The three required scenarios, each as a recorded run with real output |
 | [docs/TESTING.md](docs/TESTING.md) | Testing approach, limitations, trade-offs |
+| [docs/ENGINEERING_SUMMARY.md](docs/ENGINEERING_SUMMARY.md) | **Start here for the whole account** — plan, rationale, validation, risks, limitations, what the exercise taught |
 | [docs/adr/0001-orchestration-built-in-house.md](docs/adr/0001-orchestration-built-in-house.md) | Why the orchestration engine was written rather than adopted — with a measured comparison |
 | [spikes/ZipLink.Spike.AgentFramework/](spikes/ZipLink.Spike.AgentFramework/README.md) | The same sub-graph built on Microsoft Agent Framework, and what that showed |
 | [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | The assignment, transcribed (read-only) |
 | [PROJECT_BRIEF.md](PROJECT_BRIEF.md) | Our design and phase roadmap |
 | [CLAUDE.md](CLAUDE.md) | Working rules and environment facts for AI-assisted development |
 
-Recorded evidence for the three scenarios is in [docs/runs/](docs/runs/) — `run.json`,
-`audit.jsonl` and per-stage artifacts, copied unedited from the orchestrator's output.
+Recorded evidence is in [docs/runs/](docs/runs/) - `run.json`, the append-only
+`audit.jsonl`, per-stage artifacts and the diffs agents produced, copied unedited. Two of
+the three required scenarios did not finish cleanly, and are published as they happened.
 
 ---
 
@@ -81,7 +83,7 @@ Not built, and not claimed anywhere:
 - No database, no message queue, no cloud dependency.
 
 Every check that *decides* pass/fail is deterministic — the test suite and the policy
-scan. Only interpretation comes from a model. Tests never call one: all 196 run offline
+scan. Only interpretation comes from a model. Tests never call one: all 205 run offline
 against a fake. The only packages anywhere are ASP.NET Core OpenAPI, xUnit, and the
 Anthropic SDK in the orchestrator alone — the URL shortener has no AI dependency of any
 kind.
@@ -95,7 +97,7 @@ src/ZipLink.Api              HTTP layer            -> Core, Infrastructure
 src/ZipLink.Core             Domain + service      -> (nothing)
 src/ZipLink.Infrastructure   In-memory storage     -> Core
 src/ZipLink.Agentic          The orchestrator CLI  -> Core
-tests/ZipLink.Tests          196 tests             -> Core, Agentic
+tests/ZipLink.Tests          205 tests             -> Core, Agentic
 docs/                        Architecture, scenarios, setup, testing, ADRs, run evidence
 ```
 

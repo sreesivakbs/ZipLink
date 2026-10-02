@@ -37,7 +37,7 @@ src/
   ZipLink.Infrastructure   InMemoryShortUrlRepository                    -> Core
   ZipLink.Agentic          The orchestrator (CLI)                        -> Core
 tests/
-  ZipLink.Tests            196 tests                                     -> Core, Agentic
+  ZipLink.Tests            205 tests                                     -> Core, Agentic
 ```
 
 Inside `ZipLink.Agentic`, seven layers, each usable on its own:

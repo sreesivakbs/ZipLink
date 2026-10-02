@@ -1,15 +1,15 @@
 ﻿{
-  "RunId": "20261001-115259-1cea9a",
+  "RunId": "20261002-023755-ff180b",
   "Requirement": "Add custom short names and link expiration",
-  "CreatedAtUtc": "2026-10-01T11:52:59.3477935Z",
-  "Status": "AwaitingApproval",
+  "CreatedAtUtc": "2026-10-02T02:37:55.1067678Z",
+  "Status": "Succeeded",
   "Stages": [
     {
       "Id": "requirements",
       "State": "Succeeded",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:52:59.4173965Z",
-      "CompletedAtUtc": "2026-10-01T11:52:59.4354516Z",
+      "StartedAtUtc": "2026-10-02T02:37:55.1718316Z",
+      "CompletedAtUtc": "2026-10-02T02:37:55.1884535Z",
       "Summary": "Risk Medium, 1 ambiguity(ies) detected.",
       "ArtifactFile": "artifacts\\requirements.json",
       "InputHash": "51C36988BE9B6EE4"
@@ -18,42 +18,75 @@
       "Id": "impact",
       "State": "Succeeded",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:52:59.4454212Z",
-      "CompletedAtUtc": "2026-10-01T11:52:59.5731987Z",
-      "Summary": "31 file(s) implicated, confidence Medium.",
+      "StartedAtUtc": "2026-10-02T02:37:55.2060907Z",
+      "CompletedAtUtc": "2026-10-02T02:37:55.2897074Z",
+      "Summary": "46 file(s) implicated, confidence Medium.",
       "ArtifactFile": "artifacts\\impact.json",
       "InputHash": "AB1197B2FA6AE534"
     },
     {
       "Id": "design",
-      "State": "AwaitingApproval",
+      "State": "Succeeded",
       "Attempts": 1,
-      "StartedAtUtc": "2026-10-01T11:52:59.5883867Z",
-      "CompletedAtUtc": "2026-10-01T11:52:59.5890176Z",
-      "Summary": "STUB: No design agent yet; a human reviews the impact report instead.",
-      "GateReason": "Policy gate: this stage is high-impact and needs human approval.",
+      "StartedAtUtc": "2026-10-02T02:37:55.2992303Z",
+      "CompletedAtUtc": "2026-10-02T02:38:27.0368295Z",
+      "Summary": "10 step(s) proposed across 9 file(s); 8 open question(s).",
       "ArtifactFile": "artifacts\\design.json",
-      "InputHash": "2DB78601FD6C888F"
+      "InputHash": "E48D118D02BCB6BA",
+      "DecidedBy": "sreed",
+      "DecidedAtUtc": "2026-10-02T02:38:36.7716232Z"
     },
     {
       "Id": "implement",
-      "State": "Pending",
-      "Attempts": 0
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-02T02:38:36.8188923Z",
+      "CompletedAtUtc": "2026-10-02T02:41:39.7166243Z",
+      "Summary": "9 file(s) written and compiling after 2 attempt(s).",
+      "ArtifactFile": "artifacts\\implement.json",
+      "InputHash": "CB7D07F30B21F847"
     },
     {
       "Id": "tests",
-      "State": "Pending",
-      "Attempts": 0
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-02T02:41:39.7391528Z",
+      "CompletedAtUtc": "2026-10-02T02:41:44.5357182Z",
+      "Summary": "Passed!  - Failed:     0, Passed:   194, Skipped:     0, Total:   194, Duration: 818 ms - ZipLink.Tests.dll (net10.0)",
+      "ArtifactFile": "artifacts\\tests.json",
+      "InputHash": "0007B6FA5ADA9689"
     },
     {
       "Id": "docs",
-      "State": "Pending",
-      "Attempts": 0
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-02T02:41:39.7535779Z",
+      "CompletedAtUtc": "2026-10-02T02:41:56.429952Z",
+      "Summary": "6 release note(s); 7 documentation gap(s) flagged.",
+      "ArtifactFile": "artifacts\\docs.json",
+      "InputHash": "F62BB1FEBF20342A"
+    },
+    {
+      "Id": "policy",
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-02T02:41:39.7625418Z",
+      "CompletedAtUtc": "2026-10-02T02:41:39.9035195Z",
+      "Summary": "60 file(s) scanned; no policy violations.",
+      "ArtifactFile": "artifacts\\policy.json",
+      "InputHash": "FC2CA8A89AB9B85C"
     },
     {
       "Id": "release",
-      "State": "Pending",
-      "Attempts": 0
+      "State": "Succeeded",
+      "Attempts": 1,
+      "StartedAtUtc": "2026-10-02T02:41:56.4700727Z",
+      "CompletedAtUtc": "2026-10-02T02:41:56.4716035Z",
+      "Summary": "STUB: Release readiness summary pending final human approval.",
+      "ArtifactFile": "artifacts\\release.json",
+      "InputHash": "44BB97CDAFFD4D3D",
+      "DecidedBy": "sreed",
+      "DecidedAtUtc": "2026-10-02T02:42:13.8718039Z"
     }
   ]
 }

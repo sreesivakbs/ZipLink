@@ -1,0 +1,871 @@
+diff --git a/src/ZipLink.Api/Program.cs b/src/ZipLink.Api/Program.cs
+index 06c9379..fdc652b 100644
+--- a/src/ZipLink.Api/Program.cs
++++ b/src/ZipLink.Api/Program.cs
+@@ -1,11 +1,21 @@
+ using ZipLink.Core.Interfaces;
+ using ZipLink.Core.Services;
+ using ZipLink.Infrastructure.Repositories;
++using ZipLink.Infrastructure.Time;
+ 
+ var builder = WebApplication.CreateBuilder(args);
+ 
++// Default link lifetime. null (the default) means links never expire; expired
++// links are retained in storage but refused on resolution.
++var defaultLinkLifetime =
++    builder.Configuration.GetValue<TimeSpan?>("ZipLink:DefaultLinkLifetime");
++
+ builder.Services.AddSingleton<IShortUrlRepository, InMemoryShortUrlRepository>();
+-builder.Services.AddScoped<UrlShorteningService>();
++builder.Services.AddSingleton<IClock, SystemClock>();
++builder.Services.AddScoped(serviceProvider => new UrlShorteningService(
++    serviceProvider.GetRequiredService<IShortUrlRepository>(),
++    serviceProvider.GetRequiredService<IClock>(),
++    defaultLinkLifetime));
+ 
+ builder.Services.AddOpenApi();
+ 
+@@ -21,11 +31,30 @@ app.UseHttpsRedirection();
+ app.MapPost("/api/urls", async (
+     CreateShortUrlRequest request,
+     UrlShorteningService service,
++    IClock clock,
+     HttpContext httpContext) =>
+ {
++    var expiresAtUtc = request.ExpiresAtUtc;
++
++    if (expiresAtUtc is null && request.ExpiresInSeconds is { } expiresInSeconds)
++    {
++        if (expiresInSeconds <= 0)
++        {
++            return Results.BadRequest(new
++            {
++                error = "ExpiresInSeconds must be greater than zero."
++            });
++        }
++
++        expiresAtUtc = clock.UtcNow.AddSeconds(expiresInSeconds);
++    }
++
+     try
+     {
+-        var result = await service.CreateShortUrlAsync(request.Url);
++        var result = await service.CreateShortUrlAsync(
++            request.Url,
++            request.CustomCode,
++            expiresAtUtc);
+ 
+         var baseUrl =
+             $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+@@ -37,9 +66,17 @@ app.MapPost("/api/urls", async (
+                 result.OriginalUrl,
+                 result.ShortCode,
+                 shortUrl = $"{baseUrl}/{result.ShortCode}",
+-                result.CreatedAtUtc
++                result.CreatedAtUtc,
++                result.ExpiresAtUtc
+             });
+     }
++    catch (ShortCodeConflictException ex)
++    {
++        return Results.Conflict(new
++        {
++            error = ex.Message
++        });
++    }
+     catch (ArgumentException ex)
+     {
+         return Results.BadRequest(new
+@@ -79,10 +116,21 @@ app.MapGet("/api/urls/{code}/analytics", async (
+         result.ShortCode,
+         result.OriginalUrl,
+         result.ClickCount,
+-        result.CreatedAtUtc
++        result.CreatedAtUtc,
++        result.ExpiresAtUtc
+     });
+ });
+ 
+ app.Run();
+ 
+-record CreateShortUrlRequest(string Url);
++/// <param name="Url">The absolute HTTP/HTTPS URL to shorten.</param>
++/// <param name="CustomCode">Optional caller supplied short code.</param>
++/// <param name="ExpiresAtUtc">Optional absolute expiry instant.</param>
++/// <param name="ExpiresInSeconds">
++/// Optional relative expiry, ignored when <paramref name="ExpiresAtUtc"/> is set.
++/// </param>
++record CreateShortUrlRequest(
++    string Url,
++    string? CustomCode = null,
++    DateTimeOffset? ExpiresAtUtc = null,
++    int? ExpiresInSeconds = null);
+diff --git a/src/ZipLink.Core/Interfaces/IClock.cs b/src/ZipLink.Core/Interfaces/IClock.cs
+new file mode 100644
+index 0000000..c4fc366
+--- /dev/null
++++ b/src/ZipLink.Core/Interfaces/IClock.cs
+@@ -0,0 +1,13 @@
++namespace ZipLink.Core.Interfaces;
++
++/// <summary>
++/// Abstraction over the system clock so that time dependent behaviour
++/// (such as link expiration) can be tested deterministically.
++/// </summary>
++public interface IClock
++{
++    /// <summary>
++    /// The current instant in UTC.
++    /// </summary>
++    DateTimeOffset UtcNow { get; }
++}
+diff --git a/src/ZipLink.Core/Interfaces/IShortUrlRepository.cs b/src/ZipLink.Core/Interfaces/IShortUrlRepository.cs
+index be8db86..c5a66e0 100644
+--- a/src/ZipLink.Core/Interfaces/IShortUrlRepository.cs
++++ b/src/ZipLink.Core/Interfaces/IShortUrlRepository.cs
+@@ -4,7 +4,25 @@ namespace ZipLink.Core.Interfaces;
+ 
+ public interface IShortUrlRepository
+ {
++    /// <summary>
++    /// Adds (or overwrites) a record for the given short code.
++    /// </summary>
+     Task AddAsync(ShortUrl shortUrl);
++
++    /// <summary>
++    /// Atomically adds the record, returning <c>false</c> when the short code
++    /// is already taken. Used so custom code conflicts are detected without a
++    /// check-then-act race.
++    /// </summary>
++    Task<bool> TryAddAsync(ShortUrl shortUrl);
++
++    /// <summary>
++    /// Returns <c>true</c> when a record exists for the short code, whether or
++    /// not it has expired.
++    /// </summary>
++    Task<bool> ExistsAsync(string shortCode);
++
+     Task<ShortUrl?> GetByShortCodeAsync(string shortCode);
++
+     Task IncrementClickCountAsync(string shortCode);
+ }
+diff --git a/src/ZipLink.Core/Models/ShortUrl.cs b/src/ZipLink.Core/Models/ShortUrl.cs
+index 48cd7d8..7f747c4 100644
+--- a/src/ZipLink.Core/Models/ShortUrl.cs
++++ b/src/ZipLink.Core/Models/ShortUrl.cs
+@@ -11,4 +11,28 @@ public class ShortUrl
+     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+ 
+     public int ClickCount { get; set; }
++
++    /// <summary>
++    /// The instant at which the link stops resolving, or <c>null</c> when the
++    /// link never expires. <c>null</c> is the agreed default: links only expire
++    /// when an expiry is supplied by the caller or a default lifetime is
++    /// configured via <c>ZipLink:DefaultLinkLifetime</c>.
++    /// </summary>
++    public DateTimeOffset? ExpiresAtUtc { get; set; }
++
++    /// <summary>
++    /// <c>true</c> when the short code was supplied by the caller rather than
++    /// generated. Kept for reporting purposes.
++    /// </summary>
++    public bool IsCustomCode { get; set; }
++
++    /// <summary>
++    /// Returns <c>true</c> when the link has an expiry that is at or before
++    /// <paramref name="now"/>. Expired records are retained in storage (so
++    /// statistics remain intact) but are refused on resolution.
++    /// </summary>
++    public bool IsExpired(DateTimeOffset now)
++    {
++        return ExpiresAtUtc is { } expiresAtUtc && now >= expiresAtUtc;
++    }
+ }
+diff --git a/src/ZipLink.Core/Services/UrlShorteningService.cs b/src/ZipLink.Core/Services/UrlShorteningService.cs
+index bc96d53..9969dc4 100644
+--- a/src/ZipLink.Core/Services/UrlShorteningService.cs
++++ b/src/ZipLink.Core/Services/UrlShorteningService.cs
+@@ -6,14 +6,80 @@ namespace ZipLink.Core.Services;
+ 
+ public class UrlShorteningService
+ {
+-    private readonly IShortUrlRepository _repository;
++    /// <summary>Length of a generated short code.</summary>
++    public const int GeneratedCodeLength = 7;
++
++    /// <summary>Minimum length of a caller supplied short code.</summary>
++    public const int MinCodeLength = 3;
++
++    /// <summary>Maximum length of a caller supplied short code.</summary>
++    public const int MaxCodeLength = 32;
++
++    private const int MaxGenerationAttempts = 5;
++
++    private static readonly HashSet<string> ReservedCodes =
++        new(StringComparer.OrdinalIgnoreCase)
++        {
++            "api",
++            "health",
++            "healthz",
++            "openapi",
++            "swagger",
++            "scalar",
++            "metrics",
++            "favicon.ico",
++            "robots.txt"
++        };
+ 
+-    public UrlShorteningService(IShortUrlRepository repository)
++    private readonly IShortUrlRepository _repository;
++    private readonly IClock _clock;
++    private readonly TimeSpan? _defaultLinkLifetime;
++
++    /// <param name="repository">Backing store for short links.</param>
++    /// <param name="clock">
++    /// Clock used for creation timestamps and expiry checks. Defaults to the
++    /// system UTC clock when not supplied.
++    /// </param>
++    /// <param name="defaultLinkLifetime">
++    /// Lifetime applied when the caller does not supply an expiry.
++    /// <c>null</c> (the default) means links never expire.
++    /// </param>
++    public UrlShorteningService(
++        IShortUrlRepository repository,
++        IClock? clock = null,
++        TimeSpan? defaultLinkLifetime = null)
+     {
+         _repository = repository;
++        _clock = clock ?? new SystemUtcClock();
++        _defaultLinkLifetime =
++            defaultLinkLifetime is { } lifetime && lifetime > TimeSpan.Zero
++                ? lifetime
++                : null;
+     }
+ 
+-    public async Task<ShortUrl> CreateShortUrlAsync(string originalUrl)
++    /// <summary>
++    /// Creates a short link.
++    /// </summary>
++    /// <param name="originalUrl">The absolute HTTP/HTTPS URL to shorten.</param>
++    /// <param name="customCode">
++    /// Optional caller supplied short code. When <c>null</c> (the default) a
++    /// code is generated.
++    /// </param>
++    /// <param name="expiresAtUtc">
++    /// Optional expiry instant. When <c>null</c> (the default) the configured
++    /// default lifetime applies, and when that is also unset the link never
++    /// expires.
++    /// </param>
++    /// <exception cref="ArgumentException">
++    /// The URL or the custom code or the expiry is invalid.
++    /// </exception>
++    /// <exception cref="ShortCodeConflictException">
++    /// The custom code is already in use.
++    /// </exception>
++    public async Task<ShortUrl> CreateShortUrlAsync(
++        string originalUrl,
++        string? customCode = null,
++        DateTimeOffset? expiresAtUtc = null)
+     {
+         if (string.IsNullOrWhiteSpace(originalUrl))
+         {
+@@ -35,22 +101,76 @@ public class UrlShorteningService
+             throw new ArgumentException("URL host is a private or internal address.");
+         }
+ 
+-        var shortUrl = new ShortUrl
++        var now = _clock.UtcNow;
++        var expiry = expiresAtUtc;
++
++        if (expiry is null && _defaultLinkLifetime is { } lifetime)
+         {
+-            OriginalUrl = originalUrl,
+-            ShortCode = GenerateCode()
+-        };
++            expiry = now + lifetime;
++        }
+ 
+-        await _repository.AddAsync(shortUrl);
++        if (expiry is { } expiryInstant && expiryInstant <= now)
++        {
++            throw new ArgumentException("Expiration must be in the future.");
++        }
++
++        if (customCode is not null)
++        {
++            var code = customCode.Trim();
++
++            ValidateCustomCode(code);
++
++            var customShortUrl = new ShortUrl
++            {
++                OriginalUrl = originalUrl,
++                ShortCode = code,
++                CreatedAtUtc = now.UtcDateTime,
++                ExpiresAtUtc = expiry,
++                IsCustomCode = true
++            };
++
++            if (!await _repository.TryAddAsync(customShortUrl))
++            {
++                throw new ShortCodeConflictException(
++                    $"The short code '{code}' is already in use.");
++            }
++
++            return customShortUrl;
++        }
+ 
+-        return shortUrl;
++        for (var attempt = 0; attempt < MaxGenerationAttempts; attempt++)
++        {
++            var shortUrl = new ShortUrl
++            {
++                OriginalUrl = originalUrl,
++                ShortCode = GenerateCode(),
++                CreatedAtUtc = now.UtcDateTime,
++                ExpiresAtUtc = expiry
++            };
++
++            if (await _repository.TryAddAsync(shortUrl))
++            {
++                return shortUrl;
++            }
++        }
++
++        throw new InvalidOperationException(
++            "Unable to generate a unique short code.");
+     }
+ 
++    /// <summary>
++    /// Returns the stored record, including expired records, so reporting and
++    /// statistics remain available after expiry.
++    /// </summary>
+     public async Task<ShortUrl?> GetAsync(string code)
+     {
+         return await _repository.GetByShortCodeAsync(code);
+     }
+ 
++    /// <summary>
++    /// Resolves a short code for redirection. Expired records are reported as
++    /// not found (and are not counted as a click), but are retained in storage.
++    /// </summary>
+     public async Task<ShortUrl?> ResolveAsync(string code)
+     {
+         var url = await _repository.GetByShortCodeAsync(code);
+@@ -58,15 +178,70 @@ public class UrlShorteningService
+         if (url == null)
+             return null;
+ 
++        if (url.IsExpired(_clock.UtcNow))
++            return null;
++
+         await _repository.IncrementClickCountAsync(code);
+ 
+         return url;
+     }
+ 
++    private static void ValidateCustomCode(string code)
++    {
++        if (string.IsNullOrWhiteSpace(code))
++        {
++            throw new ArgumentException("Custom code is required");
++        }
++
++        if (code.Length < MinCodeLength || code.Length > MaxCodeLength)
++        {
++            throw new ArgumentException(
++                $"Custom code must be between {MinCodeLength} and {MaxCodeLength} characters.");
++        }
++
++        foreach (var character in code)
++        {
++            if (!IsAllowedCodeCharacter(character))
++            {
++                throw new ArgumentException(
++                    "Custom code may only contain letters, digits, '-' and '_'.");
++            }
++        }
++
++        if (ReservedCodes.Contains(code))
++        {
++            throw new ArgumentException(
++                $"The short code '{code}' is reserved.");
++        }
++    }
++
++    private static bool IsAllowedCodeCharacter(char character)
++    {
++        return char.IsAsciiLetterOrDigit(character)
++               || character == '-'
++               || character == '_';
++    }
++
+     private static string GenerateCode()
+     {
+         return Guid.NewGuid()
+             .ToString("N")
+-            .Substring(0, 7);
++            .Substring(0, GeneratedCodeLength);
++    }
++
++    private sealed class SystemUtcClock : IClock
++    {
++        public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
++    }
++}
++
++/// <summary>
++/// Thrown when a caller supplied short code is already in use.
++/// </summary>
++public class ShortCodeConflictException : InvalidOperationException
++{
++    public ShortCodeConflictException(string message)
++        : base(message)
++    {
+     }
+ }
+diff --git a/src/ZipLink.Infrastructure/Repositories/InMemoryShortUrlRepository.cs b/src/ZipLink.Infrastructure/Repositories/InMemoryShortUrlRepository.cs
+index 91400de..4ac8c63 100644
+--- a/src/ZipLink.Infrastructure/Repositories/InMemoryShortUrlRepository.cs
++++ b/src/ZipLink.Infrastructure/Repositories/InMemoryShortUrlRepository.cs
+@@ -14,6 +14,16 @@ public class InMemoryShortUrlRepository : IShortUrlRepository
+         return Task.CompletedTask;
+     }
+ 
++    public Task<bool> TryAddAsync(ShortUrl shortUrl)
++    {
++        return Task.FromResult(_data.TryAdd(shortUrl.ShortCode, shortUrl));
++    }
++
++    public Task<bool> ExistsAsync(string shortCode)
++    {
++        return Task.FromResult(_data.ContainsKey(shortCode));
++    }
++
+     public Task<ShortUrl?> GetByShortCodeAsync(string shortCode)
+     {
+         _data.TryGetValue(shortCode, out var result);
+diff --git a/src/ZipLink.Infrastructure/Time/SystemClock.cs b/src/ZipLink.Infrastructure/Time/SystemClock.cs
+new file mode 100644
+index 0000000..98063f3
+--- /dev/null
++++ b/src/ZipLink.Infrastructure/Time/SystemClock.cs
+@@ -0,0 +1,11 @@
++using ZipLink.Core.Interfaces;
++
++namespace ZipLink.Infrastructure.Time;
++
++/// <summary>
++/// <see cref="IClock"/> implementation backed by the system UTC clock.
++/// </summary>
++public class SystemClock : IClock
++{
++    public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
++}
+diff --git a/tests/ZipLink.Tests/FakeClock.cs b/tests/ZipLink.Tests/FakeClock.cs
+new file mode 100644
+index 0000000..ceae0be
+--- /dev/null
++++ b/tests/ZipLink.Tests/FakeClock.cs
+@@ -0,0 +1,26 @@
++using ZipLink.Core.Interfaces;
++
++namespace ZipLink.Tests;
++
++/// <summary>
++/// Test clock whose current instant can be set and advanced.
++/// </summary>
++public class FakeClock : IClock
++{
++    public FakeClock()
++        : this(new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero))
++    {
++    }
++
++    public FakeClock(DateTimeOffset utcNow)
++    {
++        UtcNow = utcNow;
++    }
++
++    public DateTimeOffset UtcNow { get; set; }
++
++    public void Advance(TimeSpan delta)
++    {
++        UtcNow = UtcNow.Add(delta);
++    }
++}
+diff --git a/tests/ZipLink.Tests/UrlShorteningServiceTests.cs b/tests/ZipLink.Tests/UrlShorteningServiceTests.cs
+index a55bd23..707750d 100644
+--- a/tests/ZipLink.Tests/UrlShorteningServiceTests.cs
++++ b/tests/ZipLink.Tests/UrlShorteningServiceTests.cs
+@@ -7,132 +7,288 @@ namespace ZipLink.Tests;
+ 
+ public class UrlShorteningServiceTests
+ {
++    private const string ValidUrl = "https://example.com/some/page";
++
+     [Fact]
+     public async Task CreateShortUrl_WithValidUrl_CreatesShortUrl()
+     {
+         var repository = new FakeShortUrlRepository();
+         var service = new UrlShorteningService(repository);
+ 
+-        var result = await service.CreateShortUrlAsync(
+-            "https://www.example.com");
++        var result = await service.CreateShortUrlAsync(ValidUrl);
+ 
+-        Assert.NotNull(result);
+-        Assert.Equal("https://www.example.com", result.OriginalUrl);
++        Assert.Equal(ValidUrl, result.OriginalUrl);
+         Assert.False(string.IsNullOrWhiteSpace(result.ShortCode));
+-        Assert.Equal(7, result.ShortCode.Length);
++        Assert.Equal(UrlShorteningService.GeneratedCodeLength, result.ShortCode.Length);
++        Assert.False(result.IsCustomCode);
++        Assert.Null(result.ExpiresAtUtc);
++
++        var stored = await repository.GetByShortCodeAsync(result.ShortCode);
++        Assert.NotNull(stored);
++        Assert.Equal(ValidUrl, stored!.OriginalUrl);
++    }
++
++    [Fact]
++    public async Task CreateShortUrl_WithEmptyUrl_Throws()
++    {
++        var service = new UrlShorteningService(new FakeShortUrlRepository());
++
++        await Assert.ThrowsAsync<ArgumentException>(
++            () => service.CreateShortUrlAsync("   "));
++    }
++
++    [Fact]
++    public async Task CreateShortUrl_WithInvalidUrl_Throws()
++    {
++        var service = new UrlShorteningService(new FakeShortUrlRepository());
++
++        await Assert.ThrowsAsync<ArgumentException>(
++            () => service.CreateShortUrlAsync("not a url"));
++    }
++
++    [Fact]
++    public async Task CreateShortUrl_WithNonHttpScheme_Throws()
++    {
++        var service = new UrlShorteningService(new FakeShortUrlRepository());
++
++        await Assert.ThrowsAsync<ArgumentException>(
++            () => service.CreateShortUrlAsync("ftp://example.com/file.txt"));
+     }
+ 
+     [Fact]
+-    public async Task CreateShortUrl_WithEmptyUrl_ThrowsException()
++    public async Task Resolve_WithUnknownCode_ReturnsNull()
++    {
++        var service = new UrlShorteningService(new FakeShortUrlRepository());
++
++        Assert.Null(await service.ResolveAsync("missing"));
++    }
++
++    [Fact]
++    public async Task Resolve_IncrementsClickCount()
+     {
+         var repository = new FakeShortUrlRepository();
+         var service = new UrlShorteningService(repository);
+ 
+-        await Assert.ThrowsAsync<ArgumentException>(
+-            () => service.CreateShortUrlAsync(""));
++        var created = await service.CreateShortUrlAsync(ValidUrl);
++
++        var resolved = await service.ResolveAsync(created.ShortCode);
++
++        Assert.NotNull(resolved);
++        Assert.Equal(ValidUrl, resolved!.OriginalUrl);
++
++        var stored = await repository.GetByShortCodeAsync(created.ShortCode);
++        Assert.Equal(1, stored!.ClickCount);
+     }
+ 
+     [Fact]
+-    public async Task CreateShortUrl_WithInvalidUrl_ThrowsException()
++    public async Task CreateShortUrl_WithCustomCode_UsesCodeVerbatim()
+     {
+         var repository = new FakeShortUrlRepository();
+         var service = new UrlShorteningService(repository);
+ 
+-        await Assert.ThrowsAsync<ArgumentException>(
+-            () => service.CreateShortUrlAsync("not-a-url"));
++        var result = await service.CreateShortUrlAsync(ValidUrl, "My-Link_1");
++
++        Assert.Equal("My-Link_1", result.ShortCode);
++        Assert.True(result.IsCustomCode);
++
++        var resolved = await service.ResolveAsync("My-Link_1");
++        Assert.NotNull(resolved);
++        Assert.Equal(ValidUrl, resolved!.OriginalUrl);
+     }
+ 
+-    [Theory]
+-    [InlineData("http://127.0.0.1/x")]
+-    [InlineData("http://10.1.2.3")]
+-    [InlineData("http://172.16.0.1")]
+-    [InlineData("http://192.168.1.1")]
+-    [InlineData("http://169.254.169.254/latest/meta-data")]
+-    [InlineData("http://100.64.0.1/")]
+-    [InlineData("http://0.0.0.0/")]
+-    [InlineData("http://[::1]/")]
+-    [InlineData("http://[::]/")]
+-    [InlineData("http://[fd00::1]/")]
+-    [InlineData("http://[fe80::1]/")]
+-    [InlineData("http://[::ffff:192.168.0.1]/")]
+-    [InlineData("http://localhost:8080/x")]
+-    [InlineData("http://LOCALHOST/")]
+-    [InlineData("http://db.localhost/")]
+-    [InlineData("http://printer.local/")]
+-    [InlineData("http://foo.internal/")]
+-    [InlineData("http://router.home.arpa/")]
+-    public async Task CreateShortUrl_WithPrivateOrInternalHost_ThrowsException(string url)
++    [Fact]
++    public async Task CreateShortUrl_WithDuplicateCustomCode_Throws()
+     {
+         var repository = new FakeShortUrlRepository();
+         var service = new UrlShorteningService(repository);
+ 
+-        var exception = await Assert.ThrowsAsync<ArgumentException>(
+-            () => service.CreateShortUrlAsync(url));
++        await service.CreateShortUrlAsync(ValidUrl, "taken");
+ 
+-        Assert.Contains("private or internal", exception.Message);
+-        Assert.Equal(0, repository.Count);
++        await Assert.ThrowsAsync<ShortCodeConflictException>(
++            () => service.CreateShortUrlAsync("https://example.org/", "taken"));
+     }
+ 
+     [Theory]
+-    [InlineData("https://example.com")]
+-    [InlineData("http://8.8.8.8")]
+-    [InlineData("http://172.32.0.1")]
+-    [InlineData("http://100.128.0.1")]
+-    [InlineData("https://docs.example.co.uk/a/b?q=1")]
+-    public async Task CreateShortUrl_WithPublicHost_CreatesAndIsRetrievable(string url)
++    [InlineData("")]
++    [InlineData("   ")]
++    [InlineData("ab")]
++    [InlineData("has space")]
++    [InlineData("bad/slash")]
++    [InlineData("bad.dot")]
++    [InlineData("health")]
++    [InlineData("API")]
++    public async Task CreateShortUrl_WithInvalidCustomCode_Throws(string customCode)
++    {
++        var service = new UrlShorteningService(new FakeShortUrlRepository());
++
++        await Assert.ThrowsAsync<ArgumentException>(
++            () => service.CreateShortUrlAsync(ValidUrl, customCode));
++    }
++
++    [Fact]
++    public async Task CreateShortUrl_WithTooLongCustomCode_Throws()
+     {
++        var service = new UrlShorteningService(new FakeShortUrlRepository());
++        var tooLong = new string('a', UrlShorteningService.MaxCodeLength + 1);
++
++        await Assert.ThrowsAsync<ArgumentException>(
++            () => service.CreateShortUrlAsync(ValidUrl, tooLong));
++    }
++
++    [Fact]
++    public async Task Resolve_BeforeExpiry_Succeeds()
++    {
++        var clock = new FakeClock();
+         var repository = new FakeShortUrlRepository();
+-        var service = new UrlShorteningService(repository);
++        var service = new UrlShorteningService(repository, clock);
+ 
+-        var created = await service.CreateShortUrlAsync(url);
++        var created = await service.CreateShortUrlAsync(
++            ValidUrl,
++            expiresAtUtc: clock.UtcNow.AddHours(1));
+ 
+-        Assert.Equal(url, created.OriginalUrl);
++        clock.Advance(TimeSpan.FromMinutes(59));
+ 
+         var resolved = await service.ResolveAsync(created.ShortCode);
+ 
+         Assert.NotNull(resolved);
+-        Assert.Equal(url, resolved!.OriginalUrl);
+-        Assert.Equal(1, repository.Count);
++        Assert.Equal(ValidUrl, resolved!.OriginalUrl);
+     }
+ 
+     [Fact]
+-    public async Task ResolveAsync_WithExistingCode_ReturnsUrl()
++    public async Task Resolve_AtExpiry_ReturnsNull()
+     {
++        var clock = new FakeClock();
+         var repository = new FakeShortUrlRepository();
++        var service = new UrlShorteningService(repository, clock);
+ 
+-        var shortUrl = new ShortUrl
+-        {
+-            OriginalUrl = "https://www.example.com",
+-            ShortCode = "abc1234"
+-        };
++        var created = await service.CreateShortUrlAsync(
++            ValidUrl,
++            expiresAtUtc: clock.UtcNow.AddHours(1));
+ 
+-        await repository.AddAsync(shortUrl);
++        clock.Advance(TimeSpan.FromHours(1));
+ 
+-        var service = new UrlShorteningService(repository);
++        Assert.Null(await service.ResolveAsync(created.ShortCode));
++    }
++
++    [Fact]
++    public async Task Resolve_AfterExpiry_ReturnsNullAndDoesNotCountClick()
++    {
++        var clock = new FakeClock();
++        var repository = new FakeShortUrlRepository();
++        var service = new UrlShorteningService(repository, clock);
++
++        var created = await service.CreateShortUrlAsync(
++            ValidUrl,
++            expiresAtUtc: clock.UtcNow.AddMinutes(5));
++
++        clock.Advance(TimeSpan.FromMinutes(10));
+ 
+-        var result = await service.ResolveAsync("abc1234");
++        Assert.Null(await service.ResolveAsync(created.ShortCode));
+ 
+-        Assert.NotNull(result);
+-        Assert.Equal("https://www.example.com", result!.OriginalUrl);
++        var stored = await repository.GetByShortCodeAsync(created.ShortCode);
++        Assert.NotNull(stored);
++        Assert.Equal(0, stored!.ClickCount);
+     }
+ 
+     [Fact]
+-    public async Task ResolveAsync_WithUnknownCode_ReturnsNull()
++    public async Task Get_AfterExpiry_StillReturnsRecord()
+     {
++        var clock = new FakeClock();
+         var repository = new FakeShortUrlRepository();
+-        var service = new UrlShorteningService(repository);
++        var service = new UrlShorteningService(repository, clock);
++
++        var created = await service.CreateShortUrlAsync(
++            ValidUrl,
++            expiresAtUtc: clock.UtcNow.AddMinutes(5));
++
++        clock.Advance(TimeSpan.FromDays(1));
++
++        var stored = await service.GetAsync(created.ShortCode);
++
++        Assert.NotNull(stored);
++        Assert.True(stored!.IsExpired(clock.UtcNow));
++    }
++
++    [Fact]
++    public async Task Resolve_WithoutExpiry_NeverExpires()
++    {
++        var clock = new FakeClock();
++        var service = new UrlShorteningService(new FakeShortUrlRepository(), clock);
++
++        var created = await service.CreateShortUrlAsync(ValidUrl);
++
++        Assert.Null(created.ExpiresAtUtc);
++
++        clock.Advance(TimeSpan.FromDays(3650));
++
++        Assert.NotNull(await service.ResolveAsync(created.ShortCode));
++    }
++
++    [Fact]
++    public async Task CreateShortUrl_WithPastExpiry_Throws()
++    {
++        var clock = new FakeClock();
++        var service = new UrlShorteningService(new FakeShortUrlRepository(), clock);
++
++        await Assert.ThrowsAsync<ArgumentException>(
++            () => service.CreateShortUrlAsync(
++                ValidUrl,
++                expiresAtUtc: clock.UtcNow.AddMinutes(-1)));
++    }
++
++    [Fact]
++    public async Task CreateShortUrl_WithDefaultLifetime_AppliesExpiry()
++    {
++        var clock = new FakeClock();
++        var service = new UrlShorteningService(
++            new FakeShortUrlRepository(),
++            clock,
++            TimeSpan.FromHours(2));
++
++        var created = await service.CreateShortUrlAsync(ValidUrl);
++
++        Assert.Equal(clock.UtcNow.AddHours(2), created.ExpiresAtUtc);
++
++        clock.Advance(TimeSpan.FromHours(2));
++
++        Assert.Null(await service.ResolveAsync(created.ShortCode));
++    }
++
++    [Fact]
++    public async Task CreateShortUrl_ExplicitExpiry_OverridesDefaultLifetime()
++    {
++        var clock = new FakeClock();
++        var service = new UrlShorteningService(
++            new FakeShortUrlRepository(),
++            clock,
++            TimeSpan.FromHours(2));
++
++        var expiry = clock.UtcNow.AddMinutes(30);
+ 
+-        var result = await service.ResolveAsync("missing");
++        var created = await service.CreateShortUrlAsync(
++            ValidUrl,
++            expiresAtUtc: expiry);
+ 
+-        Assert.Null(result);
++        Assert.Equal(expiry, created.ExpiresAtUtc);
++    }
++
++    [Fact]
++    public async Task IsExpired_WithNullExpiry_IsFalse()
++    {
++        var shortUrl = new ShortUrl { OriginalUrl = ValidUrl, ShortCode = "abc" };
++
++        Assert.False(shortUrl.IsExpired(DateTimeOffset.MaxValue));
++
++        await Task.CompletedTask;
+     }
+ }
+ 
++/// <summary>
++/// Simple in-memory <see cref="IShortUrlRepository"/> used by the tests.
++/// </summary>
+ public class FakeShortUrlRepository : IShortUrlRepository
+ {
+-    private readonly Dictionary<string, ShortUrl> _data = new();
+-
+-    public int Count => _data.Count;
++    private readonly Dictionary<string, ShortUrl> _data = new(StringComparer.Ordinal);
+ 
+     public Task AddAsync(ShortUrl shortUrl)
+     {
+@@ -140,6 +296,16 @@ public class FakeShortUrlRepository : IShortUrlRepository
+         return Task.CompletedTask;
+     }
+ 
++    public Task<bool> TryAddAsync(ShortUrl shortUrl)
++    {
++        return Task.FromResult(_data.TryAdd(shortUrl.ShortCode, shortUrl));
++    }
++
++    public Task<bool> ExistsAsync(string shortCode)
++    {
++        return Task.FromResult(_data.ContainsKey(shortCode));
++    }
++
+     public Task<ShortUrl?> GetByShortCodeAsync(string shortCode)
+     {
+         _data.TryGetValue(shortCode, out var result);
