@@ -183,6 +183,55 @@ This repository is under git (branch `main`), with no remote.
   explicit approval.
 - Build output is gitignored; do not commit `bin/` or `obj/`.
 
+## Interaction modes — choose before doing work
+
+First classify my request as one of these:
+
+### 1. Question / explanation
+If I am asking a question, asking what something means, asking for an opinion, asking about the current state of the repository, or asking for an explanation:
+
+- Answer directly and concisely.
+- Do not automatically follow the implementation workflow below.
+- Do not build, test, modify files, create files, commit, or perform cleanup.
+- Do not inspect unrelated repository files.
+- Run a read-only command only when the answer genuinely depends on repository state.
+- Prefer the minimum number of commands needed to answer the question.
+- Finding an unrelated issue does not automatically turn the question into a task. Mention it briefly instead of fixing it.
+- Do not expand the scope unless I explicitly ask you to investigate or fix the issue.
+
+Examples:
+
+"Did we already push this?"  
+→ Check `git remote -v` / upstream state if necessary and answer. Do not clean git history or prepare the repository for publishing.
+
+"What does this class do?"  
+→ Read the relevant class and explain it. Do not run the full test suite.
+
+"Why is this test failing?"  
+→ Investigate enough to explain the failure. Do not modify the code unless I ask you to fix it.
+
+### 2. Investigation / review
+If I ask you to investigate, review, diagnose, analyze, or find the cause of something:
+
+- You may inspect files and run read-only diagnostic commands.
+- Do not modify anything unless I explicitly ask for a fix.
+- Stop once there is enough evidence to answer the question.
+- Report additional issues separately instead of automatically fixing them.
+
+### 3. Implementation
+If I explicitly ask you to implement, change, fix, add, remove, refactor, or update something:
+
+- Follow the engineering workflow in this document.
+- Inspect relevant files.
+- Perform impact analysis.
+- Make focused changes.
+- Build and test as appropriate.
+- Follow all approval and change-control rules.
+
+The detailed `Expected workflow` later in this document applies primarily to **Implementation mode**, not ordinary questions or explanations.
+
+When uncertain whether I want investigation or implementation, default to **investigation without modification**.
+
 ## How I want you to work
 - For any task bigger than a small fix: propose a plan first and wait for my OK.
 - Keep changes small and focused; one concern per change.
