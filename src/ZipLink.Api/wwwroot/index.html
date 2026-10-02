@@ -20,14 +20,14 @@
   body {
     margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
     font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
-    display: flex; align-items: center; justify-content: center; padding: 24px;
+    padding: 32px 20px;
   }
-  .wrap { width: 100%; max-width: 560px; }
+  .wrap { width: 100%; max-width: 760px; margin: 0 auto; }
   h1 { font-size: 26px; margin: 0 0 4px; }
   .lede { color: var(--dim); margin: 0 0 22px; }
   .card {
     background: var(--card); border: 1px solid var(--line);
-    border-radius: 12px; padding: 20px;
+    border-radius: 12px; padding: 20px; margin-bottom: 18px;
   }
   label { display: block; font-size: 13px; color: var(--dim); margin-bottom: 6px; }
   .row { display: flex; gap: 8px; }
@@ -40,15 +40,34 @@
     padding: 11px 18px; font: inherit; font-weight: 600; cursor: pointer;
   }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  .result, .error { margin-top: 16px; padding: 14px; border-radius: 8px; display: none; }
-  .result { background: var(--bg); border: 1px solid var(--line); }
-  .error { background: var(--bg); border: 1px solid var(--bad); color: var(--bad); }
-  .short { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .short a { font-family: var(--mono); font-size: 16px; color: var(--accent); word-break: break-all; }
-  .copy { background: transparent; color: var(--dim); border: 1px solid var(--line); padding: 5px 10px; font-size: 13px; }
-  .stats { margin-top: 12px; font-size: 13px; color: var(--dim); }
-  .stats b { color: var(--text); font-family: var(--mono); }
-  footer { margin-top: 18px; font-size: 12px; color: var(--dim); text-align: center; }
+  button.ghost {
+    background: transparent; color: var(--dim); border: 1px solid var(--line);
+    padding: 5px 10px; font-size: 12px; font-weight: 500;
+  }
+  .error { margin-top: 14px; padding: 12px; border-radius: 8px;
+           background: var(--bg); border: 1px solid var(--bad); color: var(--bad); display: none; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+          margin-bottom: 14px; flex-wrap: wrap; }
+  .head h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+             color: var(--dim); margin: 0; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--dim); font-weight: 500;
+       padding: 0 8px 8px 0; border-bottom: 1px solid var(--line); }
+  td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  .code a { font-family: var(--mono); color: var(--accent); text-decoration: none; }
+  .code a:hover { text-decoration: underline; }
+  .dest { color: var(--dim); font-size: 13px; word-break: break-all;
+          max-width: 300px; display: inline-block; }
+  .clicks { font-family: var(--mono); font-weight: 600; text-align: right; }
+  .when { color: var(--dim); font-size: 12px; white-space: nowrap; }
+  .gone td { opacity: .55; }
+  .gone .code a { color: var(--dim); text-decoration: line-through; }
+  .tag { font-size: 11px; color: var(--bad); border: 1px solid var(--bad);
+         border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+  .empty { color: var(--dim); padding: 18px 0; }
+  footer { font-size: 12px; color: var(--dim); text-align: center; margin-top: 4px; }
+  .note { font-size: 12px; color: var(--dim); margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -62,36 +81,52 @@
       <input id="url" type="url" placeholder="https://example.com/a/very/long/path" autocomplete="off" />
       <button id="go">Shorten</button>
     </div>
-
     <div class="error" id="error"></div>
-
-    <div class="result" id="result">
-      <div class="short">
-        <a id="link" href="#" target="_blank" rel="noopener"></a>
-        <button class="copy" id="copy">Copy</button>
-      </div>
-      <div class="stats">
-        Opened <b id="clicks">0</b> times ·
-        <a href="#" id="refresh" style="color:var(--dim)">refresh</a>
-      </div>
-    </div>
   </div>
 
-  <footer>Links are kept in memory and disappear when the service restarts.</footer>
+  <div class="card">
+    <div class="head">
+      <h2>Your links</h2>
+      <div style="display:flex; gap:6px;">
+        <button class="ghost" id="refresh">Refresh counts</button>
+        <button class="ghost" id="clear">Clear list</button>
+      </div>
+    </div>
+    <div id="history"><div class="empty">Nothing yet — shorten a link above.</div></div>
+    <p class="note">
+      This list is kept in this browser, so it is yours alone and survives a refresh.
+      Links themselves live in the service's memory, so they disappear if it restarts —
+      any that have gone are marked below rather than quietly dropped.
+    </p>
+  </div>
+
+  <footer>ZipLink</footer>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-let code = null;
+const KEY = 'ziplink.links';
 
-function show(el, on) { el.style.display = on ? 'block' : 'none'; }
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) ?? []; } catch { return []; } };
+const save = (links) => { try { localStorage.setItem(KEY, JSON.stringify(links)); } catch { /* private mode */ } };
+
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+function ago(iso) {
+  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
 
 async function shorten() {
   const url = $('url').value.trim();
   if (!url) return;
 
   $('go').disabled = true;
-  show($('error'), false);
+  $('error').style.display = 'none';
 
   try {
     const res = await fetch('/api/urls', {
@@ -104,38 +139,112 @@ async function shorten() {
 
     if (!res.ok) {
       $('error').textContent = body.error ?? 'That link could not be shortened.';
-      show($('error'), true);
-      show($('result'), false);
+      $('error').style.display = 'block';
       return;
     }
 
-    code = body.shortCode;
-    $('link').textContent = body.shortUrl;
-    $('link').href = body.shortUrl;
-    $('clicks').textContent = '0';
-    show($('result'), true);
+    const links = load().filter(l => l.shortCode !== body.shortCode);
+
+    links.unshift({
+      shortCode: body.shortCode,
+      shortUrl: body.shortUrl,
+      originalUrl: body.originalUrl,
+      createdAtUtc: body.createdAtUtc,
+      clickCount: 0,
+      missing: false
+    });
+
+    save(links);
+    $('url').value = '';
+    render(links);
+    refreshCounts();
   } catch {
     $('error').textContent = 'Could not reach the service.';
-    show($('error'), true);
+    $('error').style.display = 'block';
   } finally {
     $('go').disabled = false;
   }
 }
 
-async function refreshStats() {
-  if (!code) return;
-  const res = await fetch(`/api/urls/${code}/analytics`);
-  if (res.ok) $('clicks').textContent = (await res.json()).clickCount;
+/// Asks the service for the current count of every stored link. A 404 means the link no
+/// longer exists - almost always because the service restarted and its in-memory store
+/// was emptied - so the row is marked rather than silently showing a stale number.
+async function refreshCounts() {
+  const links = load();
+  if (links.length === 0) return;
+
+  await Promise.all(links.map(async (link) => {
+    try {
+      const res = await fetch(`/api/urls/${encodeURIComponent(link.shortCode)}/analytics`);
+      if (res.ok) {
+        const stats = await res.json();
+        link.clickCount = stats.clickCount;
+        link.missing = false;
+      } else if (res.status === 404) {
+        link.missing = true;
+      }
+    } catch {
+      /* leave the last known value alone if the service is unreachable */
+    }
+  }));
+
+  save(links);
+  render(links);
+}
+
+function render(links) {
+  if (links.length === 0) {
+    $('history').innerHTML = '<div class="empty">Nothing yet — shorten a link above.</div>';
+    return;
+  }
+
+  $('history').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Short link</th><th>Destination</th>
+          <th style="text-align:right">Clicks</th><th>Created</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${links.map(l => `
+          <tr class="${l.missing ? 'gone' : ''}">
+            <td class="code">
+              <a href="${escapeHtml(l.shortUrl)}" target="_blank" rel="noopener">/${escapeHtml(l.shortCode)}</a>
+              ${l.missing ? '<br><span class="tag">no longer available</span>' : ''}
+            </td>
+            <td><span class="dest">${escapeHtml(l.originalUrl)}</span></td>
+            <td class="clicks">${l.missing ? '—' : l.clickCount}</td>
+            <td class="when">${ago(l.createdAtUtc)}</td>
+            <td style="text-align:right; white-space:nowrap;">
+              <button class="ghost" data-copy="${escapeHtml(l.shortUrl)}">Copy</button>
+              <button class="ghost" data-forget="${escapeHtml(l.shortCode)}">Remove</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
+    await navigator.clipboard.writeText(b.dataset.copy);
+    const was = b.textContent;
+    b.textContent = 'Copied';
+    setTimeout(() => (b.textContent = was), 1200);
+  });
+
+  document.querySelectorAll('[data-forget]').forEach(b => b.onclick = () => {
+    const links = load().filter(l => l.shortCode !== b.dataset.forget);
+    save(links);
+    render(links);
+  });
 }
 
 $('go').onclick = shorten;
 $('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') shorten(); });
-$('refresh').onclick = (e) => { e.preventDefault(); refreshStats(); };
-$('copy').onclick = async () => {
-  await navigator.clipboard.writeText($('link').textContent);
-  $('copy').textContent = 'Copied';
-  setTimeout(() => ($('copy').textContent = 'Copy'), 1200);
-};
+$('refresh').onclick = refreshCounts;
+$('clear').onclick = () => { save([]); render([]); };
+
+render(load());
+refreshCounts();
 </script>
 </body>
 </html>
