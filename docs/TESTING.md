@@ -4,7 +4,7 @@
 
 ## Approach
 
-One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **216 tests,
+One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **240 tests,
 ~1.9k lines of test code against ~4.5k lines of source.** No mocking framework, no
 assertion library beyond xUnit — collaborators are small enough to hand-write fakes.
 
@@ -26,6 +26,9 @@ dotnet test ZipLink.slnx     # ~2 seconds
 | `DesignAgentExecutorTests` | 13 | Schema-constrained prompt, typed parse, malformed JSON retried, refusal gated not retried, upstream context passed, stub-vs-agent wiring |
 | `PolicyScannerTests` | 17 | Secret and dependency rules, inline allow marker, skipped directories, stage fails rather than blocks, and this repository passing its own gate |
 | `BudgetAndDocsAgentTests` | 10 | Call and wall-clock budgets enforced before the model is reached, breach recorded as a stage failure, docs agent parse and prompt context |
+| `RunStoreConcurrencyTests` | 6 | Reading run state while the engine writes it: shared access, atomic swaps, audit appends losing no lines, two stores over one folder |
+| `JsonFileShortUrlRepositoryTests` | 11 | Links and click counts surviving a restart, corrupt file quarantined, concurrent clicks counted |
+| `DesignFileValidationTests` | 18 | Path rules shared with the design gate: protected locations, governance files, traversal, absolute paths, the garbled entry from a real run, and the warning reaching the summary a human reads |
 | `CodeWorkspaceTests` | 17 | The agent sandbox: allow-list enforcement, path traversal, absolute paths, protected directories and governance files refused even when the design lists them, all-or-nothing batches |
 
 ### Three deliberate techniques

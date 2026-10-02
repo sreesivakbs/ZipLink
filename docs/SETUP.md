@@ -36,7 +36,7 @@ approval gates are unchanged - an agent proposal is never acted on without a hum
 Expect design to take roughly 30-60 seconds and implement one to two minutes when enabled,
 and to cost a small amount per run. A per-run budget caps model calls and wall-clock.
 
-**Never commit a key.** Tests never call a model: all 216 run offline against a fake.
+**Never commit a key.** Tests never call a model: all 240 run offline against a fake.
 
 ### `dotnet` may not be on your PATH
 
@@ -80,7 +80,7 @@ Build succeeded.
     0 Warning(s)
     0 Error(s)
 
-Passed!  - Failed: 0, Passed: 216, Skipped: 0, Total: 216
+Passed!  - Failed: 0, Passed: 240, Skipped: 0, Total: 240
 ```
 
 The solution file is `ZipLink.slnx` (the newer XML format). There is no `.sln`.

@@ -90,6 +90,9 @@ public class PolicyScannerTests
               <ItemGroup>
                 <PackageReference Include="xunit" Version="2.9.3" />
                 <PackageReference Include="Anthropic" Version="12.53.0" />
+                <!-- Approved so agents can write HTTP-level API tests, which the
+                     testing notes record as this repository's largest gap. -->
+                <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
               </ItemGroup>
             </Project>
             """);

@@ -20,6 +20,13 @@ public sealed record DesignArtifact
 
     public IReadOnlyList<string> OpenQuestions { get; init; } = Array.Empty<string>();
 
+    /// <summary>
+    /// Files the design names that the implementation agent would be refused - protected
+    /// paths, traversal, garbled entries. Surfaced here so a human sees them while
+    /// deciding, rather than discovering afterwards that part of the plan was skipped.
+    /// </summary>
+    public IReadOnlyList<string> UnwritableFiles { get; init; } = Array.Empty<string>();
+
     /// <summary>Records that this came from a model, so no reader mistakes it for fact.</summary>
     public string Source { get; init; } = "agent";
 }
@@ -97,10 +104,29 @@ public sealed class DesignAgentExecutor : IStageExecutor
                 "The design agent returned JSON with no summary, so there is nothing to review.");
         }
 
-        return StageResult.Success(
+        // Check the plan against the rules the implementation agent will be held to, so
+        // the approval banner says "3 of these 10 cannot be written" rather than leaving
+        // a human to find out after approving.
+        var unwritable = design.FilesToChange
+            .Select(file => new { File = file, Problem = CodeWorkspace.DescribeWriteProblem(file) })
+            .Where(entry => entry.Problem is not null)
+            .Select(entry => $"{entry.File} - {entry.Problem}")
+            .ToList();
+
+        design = design with { UnwritableFiles = unwritable };
+
+        var summary =
             $"{design.Steps.Count} step(s) proposed across {design.FilesToChange.Count} file(s); "
-            + $"{design.OpenQuestions.Count} open question(s).",
-            design);
+            + $"{design.OpenQuestions.Count} open question(s).";
+
+        if (unwritable.Count > 0)
+        {
+            summary +=
+                $" WARNING: {unwritable.Count} of the listed file(s) cannot be written and "
+                + "would be skipped.";
+        }
+
+        return StageResult.Success(summary, design);
     }
 
     private static string BuildPrompt(

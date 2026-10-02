@@ -162,38 +162,63 @@ public sealed class CodeWorkspace
             RepositoryRoot, ["worktree", "remove", "--force", Root], cancellationToken);
     }
 
-    private void Guard(string relative, HashSet<string> allowed)
+    /// <summary>
+    /// Why this path could never be written, or null when it is acceptable. Shared with
+    /// the design stage so a human is not asked to approve a plan that names files the
+    /// implementation agent would be refused - the alternative is discovering it only
+    /// after approval, when the agent silently skips them.
+    ///
+    /// This deliberately does not consider the approved file list: that is a property of
+    /// a particular design, not of the path itself.
+    /// </summary>
+    public static string? DescribeWriteProblem(string path)
     {
+        var relative = Normalize(path);
+
         if (relative.Length == 0)
         {
-            throw new WorkspacePolicyException("The agent supplied an empty file path.");
+            return "the path is empty";
         }
 
-        if (Path.IsPathRooted(relative) || relative.Contains(':'))
+        if (System.IO.Path.IsPathRooted(relative) || relative.Contains(':'))
         {
-            throw new WorkspacePolicyException(
-                $"'{relative}' is an absolute path. Agents may only write inside the workspace.");
+            return "it is an absolute path, and agents may only write inside the workspace";
         }
 
         var segments = relative.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
         if (segments.Contains(".."))
         {
-            throw new WorkspacePolicyException(
-                $"'{relative}' escapes the workspace with '..'.");
+            return "it escapes the workspace with '..'";
         }
 
         if (segments.Any(segment =>
             ProtectedSegments.Contains(segment, StringComparer.OrdinalIgnoreCase)))
         {
-            throw new WorkspacePolicyException(
-                $"'{relative}' is in a protected location that agents may never write.");
+            return "it is in a protected location that agents may never write";
         }
 
         if (ProtectedFiles.Contains(segments[^1], StringComparer.OrdinalIgnoreCase))
         {
-            throw new WorkspacePolicyException(
-                $"'{relative}' is a protected file that agents may never write.");
+            return "it is a protected file that agents may never write";
+        }
+
+        // A space inside a path segment is almost always a garbled answer rather than a
+        // real file name - a confidence word or a stray fragment that leaked into the
+        // list. Worth surfacing before a human approves it.
+        if (segments.Any(segment => segment.Contains(' ')))
+        {
+            return "a path segment contains a space, which usually means the answer was garbled";
+        }
+
+        return null;
+    }
+
+    private void Guard(string relative, HashSet<string> allowed)
+    {
+        if (DescribeWriteProblem(relative) is { } problem)
+        {
+            throw new WorkspacePolicyException($"'{relative}' cannot be written: {problem}.");
         }
 
         if (!allowed.Contains(relative))

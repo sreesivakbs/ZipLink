@@ -20,7 +20,7 @@ Two pieces exist, sharing no runtime code:
   plain-English requirement and runs it through a stage graph under approval gates, policy
   checks, bounded retries, rollback and an audit trail. Localhost only. Never deployed.
 
-**Status:** 16 commits, 216 tests, zero build warnings, format gate clean. Three agents
+**Status:** 16 commits, 240 tests, zero build warnings, format gate clean. Three agents
 (`design`, `implement`, `docs`) plus two deterministic analysis stages. The loop closes:
 a requirement becomes code that a real test suite judges.
 
@@ -66,7 +66,7 @@ anyway", unlike the design and release gates.
 
 Three layers:
 
-1. **216 unit tests**, all offline. Agents are tested through a fake `ILanguageModel`, so
+1. **240 unit tests**, all offline. Agents are tested through a fake `ILanguageModel`, so
    the suite neither slowed nor became flaky when agents arrived.
 2. **The engine's own guarantees** — parallelism asserted as a fact via a shared execution
    log, not hoped for; rollback asserted by checking artifacts are actually deleted.

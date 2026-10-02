@@ -46,6 +46,7 @@ public static class PolicyScanner
     private static readonly HashSet<string> ApprovedPackages = new(StringComparer.OrdinalIgnoreCase)
     {
         "Anthropic",
+        "Microsoft.AspNetCore.Mvc.Testing",
         "Microsoft.AspNetCore.OpenApi",
         "Microsoft.NET.Test.Sdk",
         "Microsoft.Agents.AI.Workflows",

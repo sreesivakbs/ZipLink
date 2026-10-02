@@ -13,7 +13,7 @@ The orchestrator is the focus. The shortener is the sample workload it analyses.
 
 ```bash
 dotnet build ZipLink.slnx
-dotnet test  ZipLink.slnx        # 216 tests, ~3s
+dotnet test  ZipLink.slnx        # 240 tests, ~4s
 
 # The shortener, with a web page at https://localhost:7179
 dotnet run --project src/ZipLink.Api --launch-profile https
@@ -92,7 +92,7 @@ Not built, and not claimed anywhere:
 - No database, no message queue, no cloud dependency.
 
 Every check that *decides* pass/fail is deterministic — the test suite and the policy
-scan. Only interpretation comes from a model. Tests never call one: all 216 run offline
+scan. Only interpretation comes from a model. Tests never call one: all 240 run offline
 against a fake. The only packages anywhere are ASP.NET Core OpenAPI, xUnit, and the
 Anthropic SDK in the orchestrator alone — the URL shortener has no AI dependency of any
 kind.
@@ -107,7 +107,7 @@ src/ZipLink.Core             Domain + service      -> (nothing)
 src/ZipLink.Infrastructure   In-memory storage     -> Core
 src/ZipLink.Agentic          The orchestrator      -> Core
 src/ZipLink.Studio           Control panel (web)   -> Agentic   [localhost only]
-tests/ZipLink.Tests          216 tests             -> Core, Agentic
+tests/ZipLink.Tests          240 tests             -> Core, Agentic
 docs/                        Architecture, scenarios, setup, testing, ADRs, run evidence
 ```
 
