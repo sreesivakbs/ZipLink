@@ -1,5 +1,6 @@
 using ZipLink.Core.Interfaces;
 using ZipLink.Core.Models;
+using ZipLink.Core.Validation;
 
 namespace ZipLink.Core.Services;
 
@@ -27,6 +28,11 @@ public class UrlShorteningService
         if (uri.Scheme != "http" && uri.Scheme != "https")
         {
             throw new ArgumentException("Only HTTP/HTTPS URLs allowed");
+        }
+
+        if (PrivateAddressGuard.IsPrivateOrInternal(uri))
+        {
+            throw new ArgumentException("URL host is a private or internal address.");
         }
 
         var shortUrl = new ShortUrl

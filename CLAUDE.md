@@ -58,10 +58,6 @@ Open decisions, not failures — the assignment requires none of these:
   `GET /api/urls/{code}/analytics`. The brief says `POST /links`, `GET /{code}`,
   `GET /links/{code}/stats`. Pick one shape before agents generate code against the
   other; the brownfield scenario targets these endpoints.
-- **Private and internal IP addresses are not blocked.** Validation accepts only
-  `http`/`https`, so `javascript:` is refused, but `http://169.254.169.254/` and
-  `http://10.0.0.1/` are not. This is a genuine SSRF gap and the one item here worth
-  fixing on merit, independent of any brief.
 - No health check, structured logging, or rate limiting.
 - Storage is an in-memory dictionary. The brief's "integration tests on real SQL Server"
   gate is a self-imposed goal, not an assignment requirement — drop it unless a
