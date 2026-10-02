@@ -1,3 +1,5 @@
+using ZipLink.Agentic.Policy;
+
 namespace ZipLink.Agentic.Orchestration;
 
 /// <summary>
@@ -5,11 +7,13 @@ namespace ZipLink.Agentic.Orchestration;
 ///
 /// Default shape:
 /// <code>
-/// requirements -> impact -> design* -> implement -+-> tests -+-> release*
-///                                                 +-> docs  -+
+/// requirements -> impact -> design* -> implement -+-> tests  -+-> release*
+///                                                 +-> docs   -+
+///                                                 +-> policy -+
 /// </code>
-/// (* needs human approval). <c>tests</c> and <c>docs</c> are independent, so they run
-/// together; <c>release</c> depends on both, so it is the synchronization point.
+/// (* needs human approval). <c>tests</c>, <c>docs</c> and <c>policy</c> are independent,
+/// so they run together; <c>release</c> depends on all three, so it is the
+/// synchronization point.
 /// </summary>
 public sealed class StagePipeline
 {
@@ -18,6 +22,7 @@ public sealed class StagePipeline
     public const string Design = "design";
     public const string Implement = "implement";
     public const string Tests = "tests";
+    public const string Policy = "policy";
     public const string Docs = "docs";
     public const string Release = "release";
 
@@ -65,7 +70,8 @@ public sealed class StagePipeline
             new(Implement, "Implementation", [Design], RequiresApproval: false),
             new(Tests, "Automated tests", [Implement], RequiresApproval: false),
             new(Docs, "Documentation", [Implement], RequiresApproval: false),
-            new(Release, "Release readiness", [Tests, Docs], RequiresApproval: true)
+            new(Policy, "Policy gate", [Implement], RequiresApproval: false),
+            new(Release, "Release readiness", [Tests, Docs, Policy], RequiresApproval: true)
         ];
 
         var executors = new Dictionary<string, IStageExecutor>(StringComparer.Ordinal)
@@ -81,6 +87,7 @@ public sealed class StagePipeline
                 "No model configured; set ANTHROPIC_API_KEY to use the implementation "
                 + "agent. No code was written."),
             [Tests] = new TestsStageExecutor(testRunner),
+            [Policy] = new PolicyStageExecutor(),
             [Docs] = new StubStageExecutor(
                 Docs, "No documentation agent yet; nothing was generated."),
             [Release] = new StubStageExecutor(
