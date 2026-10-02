@@ -15,7 +15,7 @@ The repository holds two pieces of software that must not be confused.
 | What | Shorten a URL, redirect, count clicks | Takes a requirement and runs it through an SDLC pipeline under human control |
 | Users | Anyone sharing links | A software engineer |
 | Runs as | ASP.NET Core web service | Local CLI |
-| Contains AI | **Never** | Yes - one agent today (see §7) |
+| Contains AI | **Never** | Yes - three agents today (see §7) |
 | Deployed | Yes | **Never** |
 
 The orchestrator is the focus of the assignment. The shortener is the sample workload it
@@ -37,10 +37,10 @@ src/
   ZipLink.Infrastructure   InMemoryShortUrlRepository                    -> Core
   ZipLink.Agentic          The orchestrator (CLI)                        -> Core
 tests/
-  ZipLink.Tests            146 tests                                     -> Core, Agentic
+  ZipLink.Tests            196 tests                                     -> Core, Agentic
 ```
 
-Inside `ZipLink.Agentic`, five layers, each usable on its own:
+Inside `ZipLink.Agentic`, seven layers, each usable on its own:
 
 | Namespace | Responsibility |
 |---|---|
@@ -49,6 +49,8 @@ Inside `ZipLink.Agentic`, five layers, each usable on its own:
 | `Requirements` | Normalizes a request, detects ambiguity, owns the clarification gate |
 | `Impact` | Ranks the files a requirement is likely to touch, with evidence |
 | `Orchestration` | The engine: stage graph, state, gates, persistence, audit, metrics |
+| `Agents` | Model-backed stages, the sandboxed code workspace, and per-run budgets |
+| `Policy` | Deterministic secret and dependency scanning |
 
 `Requirements` and `Impact` depend on `Text`; `Impact` also depends on `Repository`.
 `Orchestration` depends on all of them but only through `IStageExecutor`, so a stage can
@@ -62,14 +64,14 @@ Execution walks a **directed acyclic graph**, not a list.
 
 ```
                               ┌─────────┐
-                              │ release │◄──────────┐  * human approval
-                              └────▲────┘           │
-                                   │                │
-                  ┌────────────────┴───┐        ┌───┴────┐
-                  │       tests        │        │  docs  │
-                  └────────▲───────────┘        └───▲────┘
-                           └──────────┬────────────-┘
-                                 ┌────┴──────┐
+                              │ release │ *  (joins all three)
+                              └────▲────┘
+                 ┌─────────────────┼─────────────────┐
+            ┌────┴────┐        ┌───┴────┐        ┌───┴────┐
+            │  tests  │        │  docs  │        │ policy │
+            └────▲────┘        └───▲────┘        └───▲────┘
+                 └─────────────────┼─────────────────┘
+                                 ┌─┴─────────┐
                                  │ implement │
                                  └────▲──────┘
                                  ┌────┴───┐
@@ -87,10 +89,10 @@ On each tick the engine collects **every** stage whose dependencies are satisfie
 runs them together. Two consequences fall out of the graph rather than being coded
 specially:
 
-- **Parallelism** — `tests` and `docs` both depend only on `implement`, so they run
-  concurrently.
-- **Synchronization** — `release` depends on both, so it cannot start until both finish.
-  The join is a property of the edges, not a barrier primitive.
+- **Parallelism** — `tests`, `docs` and `policy` all depend only on `implement`, so they
+  run concurrently.
+- **Synchronization** — `release` depends on all three, so it cannot start until every one
+  finishes. The join is a property of the edges, not a barrier primitive.
 
 A malformed graph — a cycle, an unknown dependency, a stage with no executor — is
 rejected when the pipeline is constructed, not discovered as a stall at runtime.
@@ -126,7 +128,7 @@ run "requirement"
       │   (human runs: approve <run> <stage>)  ◄─────────────────┘
       │
       ├─ implement
-      ├─ tests ∥ docs          ← real `dotnet test` decides pass/fail
+      ├─ tests ∥ docs ∥ policy   ← real `dotnet test` and the policy scan decide
       └─ release ──────────────────────────► AwaitingApproval ──► Succeeded
 ```
 
@@ -139,11 +141,12 @@ not be able to read it as success.
 | Gate | Kind | Fires when |
 |---|---|---|
 | `requirements` exit | Dynamic | The requirement scores High for ambiguity |
-| `design` exit | Policy | Always — design is high-impact by definition |
-| `release` exit | Policy | Always — final sign-off before anything ships |
+| `design` exit | Approval | Always — design is high-impact by definition |
+| `release` exit | Approval | Always — final sign-off before anything ships |
+| `policy` stage | Deterministic | A committed secret or unapproved package **fails** the stage. Unlike the others it offers no approval path: a guardrail an agent can argue past is not a guardrail. |
 
-Both kinds land in the same `AwaitingApproval` state, so the engine has one pause
-mechanism rather than two.
+The first three land in the same `AwaitingApproval` state, so the engine has one pause
+mechanism rather than several. The policy stage is different on purpose: it fails.
 
 ---
 
@@ -254,7 +257,7 @@ run folder.
 Stated plainly, because an architecture document that only describes what exists is
 marketing:
 
-- **Only two agents.** `docs` is still a stub.
+- **Only the release summary is still a stub.**
 - **Nothing merges.** Agent code stays in its worktree; a human applies it or does not.
 - **No persistence beyond JSON files** — no database, no migrations.
 - **No budgets** (max LLM calls, tokens, wall-clock) — nothing consumes them yet.

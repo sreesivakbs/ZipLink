@@ -4,7 +4,7 @@
 
 ## Approach
 
-One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **146 tests,
+One xUnit project, `tests/ZipLink.Tests`, covering both halves of the system. **196 tests,
 ~1.9k lines of test code against ~4.5k lines of source.** No mocking framework, no
 assertion library beyond xUnit — collaborators are small enough to hand-write fakes.
 
@@ -24,6 +24,8 @@ dotnet test ZipLink.slnx     # ~2 seconds
 | `OrchestratorTests` | 19 | Graph ordering, parallelism and join, gates, approve/reject, failure isolation, persistence, audit, graph validation |
 | `OrchestratorResilienceTests` | 14 | Bounded retries, rollback, safe-stop, re-planning, metrics |
 | `DesignAgentExecutorTests` | 13 | Schema-constrained prompt, typed parse, malformed JSON retried, refusal gated not retried, upstream context passed, stub-vs-agent wiring |
+| `PolicyScannerTests` | 17 | Secret and dependency rules, inline allow marker, skipped directories, stage fails rather than blocks, and this repository passing its own gate |
+| `BudgetAndDocsAgentTests` | 10 | Call and wall-clock budgets enforced before the model is reached, breach recorded as a stage failure, docs agent parse and prompt context |
 | `CodeWorkspaceTests` | 17 | The agent sandbox: allow-list enforcement, path traversal, absolute paths, protected directories and governance files refused even when the design lists them, all-or-nothing batches |
 
 ### Three deliberate techniques

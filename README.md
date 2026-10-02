@@ -12,7 +12,7 @@ The orchestrator is the focus. The shortener is the sample workload it analyses.
 
 ```bash
 dotnet build ZipLink.slnx
-dotnet test  ZipLink.slnx        # 146 tests, ~3s
+dotnet test  ZipLink.slnx        # 196 tests, ~3s
 
 # A requirement too vague to act on — stops and asks, exit code 2
 dotnet run --project src/ZipLink.Agentic -- run "Make it handle more traffic"
@@ -43,7 +43,7 @@ Recorded evidence for the three scenarios is in [docs/runs/](docs/runs/) — `ru
 
 ## Current state
 
-**Phase 3 — first real agent, behind the existing gates.**
+**Phase 3–4 — three real agents behind gates, with policy guardrails and budgets.**
 
 Built:
 
@@ -57,10 +57,14 @@ Built:
   synchronization, human approval checkpoints, bounded retries, rollback, safe-stop,
   input-hash re-planning, append-only audit log, reliability metrics
 
-- **Two real agents — `design` and `implement`** (`claude-opus-5`), both
-  schema-constrained and both behind human approval gates. They propose; they never
+- **Three real agents — `design`, `implement` and `docs`** (`claude-opus-5`), all
+  schema-constrained and all behind human approval gates. They propose; they never
   decide. Agents run only when `ANTHROPIC_API_KEY` is set; otherwise those stages fall
   back to stubs so the pipeline stays runnable offline.
+- **A deterministic policy gate** runs alongside tests and docs: no committed secrets, no
+  unapproved NuGet packages. No model is consulted, so an agent cannot argue past it, and
+  a violation fails outright — there is no "approve anyway".
+- **Per-run budgets** cap model calls and wall-clock time, bounded by construction.
 - **The loop closes.** `implement` writes code into an **isolated detached git worktree**
   — never your working tree, and no branches are created — restricted to the files the
   approved design named. It compiles what it wrote, feeding compiler errors back to
@@ -71,15 +75,16 @@ Built:
 
 Not built, and not claimed anywhere:
 
-- **`docs` is still a stub** that says so in its own artifact.
+- **`release` is still a stub** summary sitting behind its approval gate.
 - **Nothing merges.** Agent work stays in the worktree for a human to review; no code
   reaches `main` without a person applying it.
 - No database, no message queue, no cloud dependency.
 
-Everything except the design agent is deterministic. Tests never call a model: all 146
-run offline against a fake. The only packages anywhere are ASP.NET Core OpenAPI, xUnit,
-and the Anthropic SDK in the orchestrator alone — the URL shortener has no AI dependency
-of any kind.
+Every check that *decides* pass/fail is deterministic — the test suite and the policy
+scan. Only interpretation comes from a model. Tests never call one: all 196 run offline
+against a fake. The only packages anywhere are ASP.NET Core OpenAPI, xUnit, and the
+Anthropic SDK in the orchestrator alone — the URL shortener has no AI dependency of any
+kind.
 
 ---
 
@@ -90,7 +95,7 @@ src/ZipLink.Api              HTTP layer            -> Core, Infrastructure
 src/ZipLink.Core             Domain + service      -> (nothing)
 src/ZipLink.Infrastructure   In-memory storage     -> Core
 src/ZipLink.Agentic          The orchestrator CLI  -> Core
-tests/ZipLink.Tests          146 tests             -> Core, Agentic
+tests/ZipLink.Tests          196 tests             -> Core, Agentic
 docs/                        Architecture, scenarios, setup, testing, ADRs, run evidence
 ```
 

@@ -34,7 +34,7 @@ The orchestrator is the main focus. The shortener is the sample workload it buil
 Phase numbering follows the roadmap table in `PROJECT_BRIEF.md` section 7.
 Do not start work belonging to a later phase unless I ask.
 
-**Phase 3 — first real agent wired behind the existing gates.**
+**Phase 3-4 - three agents behind gates, with policy guardrails and budgets.**
 
 Built so far:
 - Shortener: create / redirect / click-count, in-memory store.
@@ -45,13 +45,18 @@ Built so far:
 - Orchestration engine: stage DAG with entry/exit gates, parallel execution with
   synchronization, approval checkpoints, bounded retries, rollback, safe-stop,
   input-hash re-planning, append-only audit log, reliability metrics.
-- **Two real agents — `design` and `implement`** (`claude-opus-5`), schema-constrained,
-  behind their existing approval gates. Both fall back to stubs when `ANTHROPIC_API_KEY`
-  is unset, so the pipeline still runs offline. `docs` remains a stub.
+- **Three real agents - `design`, `implement` and `docs`** (`claude-opus-5`),
+  schema-constrained, behind their approval gates. All fall back to stubs when
+  `ANTHROPIC_API_KEY` is unset, so the pipeline still runs offline.
+- **Policy gate**: deterministic secret and unapproved-dependency scan running beside
+  tests and docs; a violation fails the stage with no approval path. Inline
+  `policy:allow-secret` marks a line that legitimately looks like a secret.
+- **Per-run budgets**: model calls and wall-clock, enforced by a decorator so no agent
+  can escape them.
 - **`implement` writes code** into a detached git worktree (no branches created), limited
   to files the approved design named, compiles it with feedback, and the tests stage runs
   the real suite in that workspace. Rollback is `git reset --hard`. Nothing merges.
-- 146 tests, all offline — the agent is tested through a fake `ILanguageModel`.
+- 196 tests, all offline — the agent is tested through a fake `ILanguageModel`.
 
 Open decisions, not failures — the assignment requires none of these:
 - **Routes do not match the brief.** Built: `POST /api/urls`, `GET /{code}`,

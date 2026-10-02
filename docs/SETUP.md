@@ -10,10 +10,10 @@ Everything needed to clone, build, test and run both halves of the system.
 - **git**
 - No database, container runtime or cloud account is required.
 - **An Anthropic API key is optional.** Without one everything still builds, tests and
-  runs — the `design` stage falls back to a stub. With one, that stage becomes a real
-  agent. See [Enabling the design agent](#enabling-the-design-agent).
+  runs - the `design`, `implement` and `docs` stages fall back to stubs. With one, they
+  become real agents. See [Enabling the agents](#enabling-the-agents).
 
-### Enabling the design agent
+### Enabling the agents
 
 Set `ANTHROPIC_API_KEY` in the environment, or use .NET User Secrets. The SDK reads it
 directly; nothing in this repository stores, logs or forwards it, and no key is ever
@@ -26,15 +26,17 @@ $env:ANTHROPIC_API_KEY = "sk-ant-..."
 The orchestrator announces which mode it is in on startup:
 
 ```
-Design agent enabled (claude-opus-5). Its proposal still requires human approval.
+Agents enabled (claude-opus-5), budget 20 model calls / 30 min per run. The
+implementation agent writes to an isolated git worktree, never this working tree, and
+every proposal still requires human approval.
 ```
 
-With no key set, the stage runs the stub and says so in its artifact. Either way the
-`design` approval gate is unchanged — an agent proposal is never acted on without a
-human. Expect that stage to take roughly 30–60 seconds when the agent is enabled, and to
-cost a small amount per run.
+With no key set, those stages run stubs and say so in their artifacts. Either way the
+approval gates are unchanged - an agent proposal is never acted on without a human.
+Expect design to take roughly 30-60 seconds and implement one to two minutes when enabled,
+and to cost a small amount per run. A per-run budget caps model calls and wall-clock.
 
-**Never commit a key.** Tests never call a model: all 146 run offline against a fake.
+**Never commit a key.** Tests never call a model: all 196 run offline against a fake.
 
 ### `dotnet` may not be on your PATH
 
@@ -78,7 +80,7 @@ Build succeeded.
     0 Warning(s)
     0 Error(s)
 
-Passed!  - Failed: 0, Passed: 146, Skipped: 0, Total: 146
+Passed!  - Failed: 0, Passed: 196, Skipped: 0, Total: 196
 ```
 
 The solution file is `ZipLink.slnx` (the newer XML format). There is no `.sln`.
