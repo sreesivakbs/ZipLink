@@ -6,7 +6,7 @@ namespace ZipLink.Core.Services;
 
 public class UrlShorteningService
 {
-    private const int ShortCodeLength = 15;
+    private const int ShortCodeLength = 5;
 
     private readonly IShortUrlRepository _repository;
 

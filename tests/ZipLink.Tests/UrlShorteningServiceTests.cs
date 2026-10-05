@@ -19,18 +19,18 @@ public class UrlShorteningServiceTests
         Assert.NotNull(result);
         Assert.Equal("https://www.example.com", result.OriginalUrl);
         Assert.False(string.IsNullOrWhiteSpace(result.ShortCode));
-        Assert.Equal(15, result.ShortCode.Length);
+        Assert.Equal(5, result.ShortCode.Length);
     }
 
     [Fact]
-    public async Task CreateShortUrl_ThenResolve_ReturnsOriginalUrlForFifteenCharacterCode()
+    public async Task CreateShortUrl_ThenResolve_ReturnsOriginalUrlForFiveCharacterCode()
     {
         var repository = new FakeShortUrlRepository();
         var service = new UrlShorteningService(repository);
 
         var created = await service.CreateShortUrlAsync("https://www.example.com/docs?page=2");
 
-        Assert.Equal(15, created.ShortCode.Length);
+        Assert.Equal(5, created.ShortCode.Length);
 
         var resolved = await service.ResolveAsync(created.ShortCode);
 
@@ -39,7 +39,29 @@ public class UrlShorteningServiceTests
     }
 
     [Fact]
-    public async Task CreateShortUrl_ManyTimes_ProducesUniqueFifteenCharacterUrlSafeCodes()
+    public async Task CreateShortUrl_GeneratesFiveCharacterCode_StoredAndRetrievableFromRepository()
+    {
+        var repository = new FakeShortUrlRepository();
+        var service = new UrlShorteningService(repository);
+
+        var created = await service.CreateShortUrlAsync("https://www.example.com/articles/42");
+
+        Assert.Equal(5, created.ShortCode.Length);
+
+        var stored = await repository.GetByShortCodeAsync(created.ShortCode);
+
+        Assert.NotNull(stored);
+        Assert.Equal(5, stored!.ShortCode.Length);
+        Assert.Equal("https://www.example.com/articles/42", stored.OriginalUrl);
+
+        var fetched = await service.GetAsync(created.ShortCode);
+
+        Assert.NotNull(fetched);
+        Assert.Equal("https://www.example.com/articles/42", fetched!.OriginalUrl);
+    }
+
+    [Fact]
+    public async Task CreateShortUrl_ManyTimes_ProducesUniqueFiveCharacterUrlSafeCodes()
     {
         var repository = new FakeShortUrlRepository();
         var service = new UrlShorteningService(repository);
@@ -54,7 +76,7 @@ public class UrlShorteningServiceTests
 
         Assert.All(codes, code =>
         {
-            Assert.Equal(15, code.Length);
+            Assert.Equal(5, code.Length);
             Assert.All(code, c => Assert.True(
                 (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'),
                 $"Unexpected character '{c}' in short code '{code}'."));
